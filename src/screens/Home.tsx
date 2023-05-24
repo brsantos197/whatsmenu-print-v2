@@ -1,9 +1,12 @@
 import { useEffect } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import useBLE from '../hooks/useBLE';
+import { useWebSocket } from '../hooks/useWebSocket';
 
 export const Home = () => {
   const { allDevices, requestPermissions, scanForPeripherals, connectToDevice, connectedDevice } = useBLE()
+
+  const { ws } = useWebSocket()
 
   useEffect(() => {
     requestPermissions().then(isGranted => {
@@ -11,6 +14,8 @@ export const Home = () => {
         scanForPeripherals()
       }
     })
+
+
   }, [])
 
   console.log(connectedDevice)
