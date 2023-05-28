@@ -1,68 +1,73 @@
-import { useEffect } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
-import useBLE from '../hooks/useBLE';
+import { useEffect, useState } from 'react';
+import { Text, View, BackHandler, DeviceEventEmitter } from 'react-native';
 import { useWebSocket } from '../hooks/useWebSocket';
-import { Device } from 'react-native-ble-plx';
+import { useThermalPrinter } from '../hooks/useThermalPrinter';
+import { Page } from '../components/Page';
+import { TextStyled } from '../components/TextStyled';
+import { useNavigation } from '@react-navigation/native';
+import Button from '../components/Button';
+import { getUser, removeUser } from '../storage/user/user';
+
+type BluetoothPrinter = {
+  deviceName: string;
+  macAddress: string;
+}
 
 export const Home = () => {
-  const { allDevices, requestPermissions, scanForPeripherals, connectToDevice, connectedDevice } = useBLE()
+  const [profile, setProfile] = useState()
+  const { navigate } = useNavigation()
+  const { ws } = useWebSocket(profile)
+  const { devices } = useThermalPrinter()
 
-  const { ws } = useWebSocket()
-
-  const connect = async (device: Device) => {
-    try {
-      
-      const connectedDevice = await device.connect()
-  
-      // Serviço e característica específicos para envio de dados para a impressora térmica
-      const serviceUUID = '000018f0-0000-1000-8000-00805f9b34fb';
-      const characteristicUUID = '00002af1-0000-1000-8000-00805f9b34fb';
-  
-      // Crie um buffer contendo o texto a ser impresso
-      const text = 'Hello, World!';
-      // const encoder = new TextEncoder();
-      // const data = encoder.encode(text);
-  
-      // Obtenha o serviço e a característica correspondentes
-      // const service = await connectedDevice.discoverService(serviceUUID);
-      // const characteristic = await service.characteristic(characteristicUUID);
-  
-      const test = await connectedDevice.discoverAllServicesAndCharacteristics();
-      const services = await test.services()
-      const characteristic = await test.characteristicsForService(serviceUUID)
-
-      const result = await test.writeCharacteristicWithResponseForService(serviceUUID, characteristicUUID, 'aGVsbG8gbWlzcyB0YXBweQ==')
-      console.log(result, 'aqui');
-  
-      // Escreva os dados na característica para enviar à impressora térmica
-      await characteristic[0].writeWithResponse('sadasdasdas');
-    } catch (error) {
-      console.error(error);
-      
-    }
-    
+  const handleLogOff = async () => {
+    await removeUser()
+    navigate('auth')
   }
 
   useEffect(() => {
-    requestPermissions().then(isGranted => {
-      if (isGranted) {
-        scanForPeripherals()
-      }
+    if (ws) {
+      DeviceEventEmitter.addListener('request', (request) => {
+        console.log(request);
+      })
+    }
+
+    return () => {
+      DeviceEventEmitter.removeAllListeners()
+    }
+  }, [ws])
+
+  useEffect(() => {
+    getUser()
+      .then(user => {
+        if (user) {
+          setProfile(user.profile)
+        }
+      })
+    BackHandler.addEventListener('hardwareBackPress', () => {
+      BackHandler.exitApp()
+      return true
     })
-
-
+    return () => BackHandler.removeEventListener('hardwareBackPress', () => {
+      BackHandler.exitApp()
+      return true
+    })
   }, [])
 
-  console.log(connectedDevice)
   return (
-    <View>
-      <Text className='text-blue-600'>Home</Text>
-      {allDevices.map((device) => (
-        <View key={device.id}>
-          <Text className='text-white'>{device.name}</Text>
-          <TouchableOpacity className='bg-blue-500 items-center p-2 rounded-md' onPress={() => { connect(device) }} ><Text className='text-white'>Conectar</Text></TouchableOpacity>
+    <Page>
+      <TextStyled>Home</TextStyled>
+      {devices.map((device) => (
+        <View key={device.macAddress}>
+          <Text className='text-white'>{device.deviceName}</Text>
+          {/* <TouchableOpacity className='bg-blue-500 items-center p-2 rounded-md' onPress={() => { print(device.macAddress) }} ><Text className='text-white'>Conectar</Text></TouchableOpacity> */}
         </View>
       ))}
-    </View>
+      <Button
+        className='w-screen absolute bottom-0'
+        onPress={handleLogOff}
+      >
+        <TextStyled>Deslogar</TextStyled>
+      </Button>
+    </Page>
   );
 }

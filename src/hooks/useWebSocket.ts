@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { RequestType } from "../@types/request.type"
-import { EventEmitter } from "react-native"
+import { DeviceEventEmitter } from "react-native"
 
-export const useWebSocket = () => {
-  const [ws, setWs] = useState<WebSocket>()
+export const useWebSocket = (profile: any) => {
   const [pongInterval, setPongInterval] = useState<NodeJS.Timeout>()
+  const [ws, setWs] = useState<WebSocket>()
 
   const connect = () => {
     setWs(new WebSocket('wss://rt2.whatsmenu.com.br/adonis-ws'))
@@ -33,7 +33,7 @@ export const useWebSocket = () => {
         ws.send(JSON.stringify({
           t: 1,
           d: {
-            topic: 'print:aguanaboca'
+            topic: `print:${profile.slug}`
           }
         }))
 
@@ -60,6 +60,7 @@ export const useWebSocket = () => {
                     return -1
                   }
                 }).forEach(request => {
+                  DeviceEventEmitter.emit('request', request)
                   console.log(`%c[ws-request-${request.type}]:`, `color: ${colors[request.type]}`, `code ${request.code}`, `${request.tentatives > 0 ? request.tentatives + ' tentaiva reenvio' : ''}`, ` - ${new Date().toTimeString()}`)
                 });
               }
