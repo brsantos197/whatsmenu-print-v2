@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 import { api } from "../lib/axios";
 import { getUser, setUser } from "../storage/user/user";
 import { Loading } from "../components/Loading";
-import Button from "../components/Button";
+import { Button } from "../components/Button";
 
 export const Auth = () => {
   const [email, setEmail] = useState('')

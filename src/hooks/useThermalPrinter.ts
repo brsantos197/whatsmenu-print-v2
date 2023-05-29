@@ -4,6 +4,13 @@ import { PermissionsAndroid, Platform } from "react-native";
 import ThermalPrinterModule from 'react-native-thermal-printer'
 import * as ExpoDevice from "expo-device";
 
+export type BluetoothPrinter = {
+  deviceName: string;
+  macAddress: string;
+  copies: number;
+  bold: boolean;
+  print: boolean
+}
 
 export const useThermalPrinter = () => {
   const [devices, setDevices] = useState<any[]>([])
@@ -64,9 +71,14 @@ export const useThermalPrinter = () => {
     }
   };
 
-  const print = async (text: string) => {
+  const print = async (text: any, macAddress: string, printerWidthMM: 58 | 80) => {
+    const printerNbrCharactersPerLine = printerWidthMM === 58 ? 32 : 50
+    const payload = String(text).replaceAll('<hr>', `<b>${''.padStart(printerNbrCharactersPerLine, '=')}</b>\n`)
     await ThermalPrinterModule.printBluetooth({
-      payload: text,
+      payload,
+      macAddress,
+      printerWidthMM,
+      printerNbrCharactersPerLine
     })
   }
 

@@ -1,43 +1,35 @@
-import { useCallback, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { RequestType } from "../@types/request.type"
 import { DeviceEventEmitter } from "react-native"
 
 export const useWebSocket = (profile: any) => {
+  const [socket, setSocket] = useState<WebSocket>()
   const [pongInterval, setPongInterval] = useState<NodeJS.Timeout>()
-  const [ws, setWs] = useState<WebSocket>()
-
-  const connect = () => {
-    setWs(new WebSocket('wss://rt2.whatsmenu.com.br/adonis-ws'))
-  }
-
 
   useEffect(() => {
-    connect()
-
-    return () => {
-      clearInterval(pongInterval)
+    if (profile && !socket) {
+      setSocket(new WebSocket('wss://rt2.whatsmenu.com.br/adonis-ws'))
     }
-  }, [])
+  }, [profile])
 
   useEffect(() => {
-    if (ws) {
-      ws.onopen = (event: any) => {
+    if (socket && !socket.onopen) {
+      socket.onopen = (event: any) => {
         console.log('%c[ws-connected]:', 'color: #0f0', `on ${event.target.url}`, ` - ${new Date().toTimeString()}`)
-
+        DeviceEventEmitter.addListener('background-pong', (pong) => {
+          socket.send(JSON.stringify({ t: 8 }))
+        })
         const interval = setInterval(() => {
-          ws.send(JSON.stringify({ t: 8 }))
+          socket.send(JSON.stringify({ t: 8 }))
         }, 1000 * 25);
-
         setPongInterval(interval)
-
-        ws.send(JSON.stringify({
+        socket.send(JSON.stringify({
           t: 1,
           d: {
             topic: `print:${profile.slug}`
           }
         }))
-
-        ws.onmessage = (event) => {
+        socket.onmessage = (event) => {
           const data = JSON.parse(event.data)
           switch (data.t) {
             case 3: {
@@ -72,16 +64,23 @@ export const useWebSocket = (profile: any) => {
             }
           }
         }
-
-        ws.onclose = (event) => {
+        socket.onclose = (event) => {
           console.log('%c[ws-disconnected]:', 'color: #f00', `code ${event.code} ${event.reason}`, ` - ${new Date().toTimeString()}`)
           clearInterval(pongInterval)
+          setSocket(state => {
+            state?.close()
+            return new WebSocket('wss://rt2.whatsmenu.com.br/adonis-ws')
+          })
         }
-
       }
     }
-  }, [ws])
+  }, [socket])
+
+  useEffect(() => {
+
+  }, [])
+
   return {
-    ws
+    socket
   }
 }
