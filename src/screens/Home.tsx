@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View, BackHandler, DeviceEventEmitter, ScrollView, useColorScheme } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { View, DeviceEventEmitter, ScrollView, useColorScheme, Switch } from 'react-native';
+import { useNavigation, CommonActions } from '@react-navigation/native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { DateTime } from 'luxon';
 
@@ -18,7 +18,7 @@ import { DevicesModal } from '../components/DevicesModal';
 import { getLocalPrinters, setLocalPrinters } from '../storage/printers';
 
 export const Home = () => {
-  const { navigate } = useNavigation()
+  const { navigate, dispatch } = useNavigation()
   const { devices, print } = useThermalPrinter()
   const colorScheme = useColorScheme()
 
@@ -79,11 +79,21 @@ export const Home = () => {
     return text
   }
 
-  const printRequest = useCallback(async (request: RequestType) => {
-    const text = printText(request)
+  const printerConfig = (printer: BluetoothPrinter) => {
+    navigate('printer', {
+      printer
+    })
+  }
+
+  const printForAllPrinters = useCallback(async (text: string) => {
     for (const printer of printers) {
       await print(text, printer.macAddress, 58)
     }
+  }, [printers, profile])
+
+  const printRequest = useCallback(async (request: RequestType) => {
+    const text = printText(request)
+    await printForAllPrinters(text)
   }, [printers, profile])
 
   useEffect(() => {
@@ -106,35 +116,35 @@ export const Home = () => {
       .then(user => {
         if (user && !profile) {
           setProfile(user.profile)
+          dispatch(state => {
+            const routes = state.routes.filter(r => r.name !== 'auth');
+
+            return CommonActions.reset({
+              ...state,
+              routes,
+              index: routes.length - 1,
+            });
+          })
         }
       })
 
     getLocalPrinters()
       .then(localPrinters => {
-        console.log(localPrinters, 'LOCAL');
-
         setPrinters(localPrinters)
       })
 
-    BackHandler.addEventListener('hardwareBackPress', () => {
-      BackHandler.exitApp()
-      return true
-    })
-    return () => {
-      BackHandler.removeEventListener('hardwareBackPress', () => {
-        BackHandler.exitApp()
-        return true
-      })
-    }
+
   }, [])
 
   return (
     <Page className='justify-start'>
-      <View className='bg-zinc-800 p-4 mb-1 w-screen'>
+      <View className='dark:bg-zinc-800 light:bg-zinc-400 p-4 mb-1 w-screen'>
         <TextStyled className='text-2xl font-bold'>Configurações</TextStyled>
       </View>
-      <View className='bg-zinc-800 p-4 w-screen flex-row gap-x-2 mt-2 items-center justify-center'>
-        <Button>
+      <View className='dark:bg-zinc-800 light:bg-zinc-400  p-4 w-screen flex-row gap-x-2 mt-2 items-center justify-center'>
+        <Button
+          onPress={() => printForAllPrinters('[C]<b>WHATSMENU IMPRESSORA</b>\n\n')}
+        >
           <TextStyled>Testar Impressão</TextStyled>
         </Button>
         <Button
@@ -149,8 +159,10 @@ export const Home = () => {
           {printers.map(printer => (
             <View className='flex-row items-center justify-between p-2' key={printer.deviceName}>
               <TextStyled className='text-lg'>{printer.deviceName}</TextStyled>
-              <Button>
-                <MaterialIcons name="settings" color={colorScheme === 'dark' ? colors.zinc[50] : colors.zinc[950]} ></MaterialIcons>
+              <Button
+                onPress={() => printerConfig(printer)}
+              >
+                <MaterialIcons name="settings" size={16} color={colorScheme === 'dark' ? colors.zinc[50] : colors.zinc[950]} ></MaterialIcons>
               </Button>
             </View>
           ))}

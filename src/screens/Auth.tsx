@@ -1,10 +1,11 @@
+import { useState, useEffect } from "react";
+import { View, BackHandler } from 'react-native';
+
 import { useNavigation } from "@react-navigation/native";
 
-import { View, TouchableOpacity } from 'react-native';
 import { Page } from '../components/Page';
 import { TextStyled } from '../components/TextStyled';
 import { Input } from '../components/Input';
-import { useState, useEffect } from "react";
 import { api } from "../lib/axios";
 import { getUser, setUser } from "../storage/user";
 import { Loading } from "../components/Loading";
@@ -15,7 +16,7 @@ export const Auth = () => {
   const [password, setPassword] = useState('')
   const [loaded, setLoaded] = useState(false)
 
-  const { navigate } = useNavigation()
+  const { navigate, reset } = useNavigation()
 
   const handleAuth = async () => {
     try {

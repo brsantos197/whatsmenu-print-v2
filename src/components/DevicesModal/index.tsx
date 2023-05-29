@@ -17,8 +17,8 @@ interface DevicesModalProps {
   onConfirm?: (selectedPrinters: BluetoothPrinter[]) => void
 }
 
-export const DevicesModal = ({ devices, printers, onConfirm ,show, cancel, confirm }: DevicesModalProps) => {
-  const [selectedPrinters, setSelectedPrinters] = useState<BluetoothPrinter[]>(printers)  
+export const DevicesModal = ({ devices, printers, onConfirm, show, cancel, confirm }: DevicesModalProps) => {
+  const [selectedPrinters, setSelectedPrinters] = useState<BluetoothPrinter[]>(printers)
 
   const isSelectedPrinter = (macAddress: string) => {
     return selectedPrinters.some(printer => printer.macAddress === macAddress)
@@ -29,7 +29,7 @@ export const DevicesModal = ({ devices, printers, onConfirm ,show, cancel, confi
       if (state.some(printer => printer.macAddress === device.macAddress)) {
         return state.filter(printer => printer.macAddress !== device.macAddress)
       } else {
-        return [...state, { ...device, bold: false, copies: 1, print: true }]
+        return [...state, { ...device, bold: false, copies: 1, print: true, lines: 7, font: 'sm' }]
       }
     })
   }
@@ -77,22 +77,22 @@ export const DevicesModal = ({ devices, printers, onConfirm ,show, cancel, confi
             keyExtractor={item => item.macAddress}
           />
           <View className='p-4 flex-row items-center justify-end rounded-b-md bg-zinc-700 w-full'>
-            <Button 
+            <Button
               className="p-2 bg-red-500"
               onPress={() => {
                 setSelectedPrinters([])
                 cancel()
               }}
-              >
+            >
               <Text className="text-zinc-50">Cancelar</Text>
             </Button>
-            <Button 
+            <Button
               className="p-2 mx-2"
               onPress={() => {
                 confirm()
                 onConfirm && onConfirm(selectedPrinters)
               }}
-              >
+            >
               <Text className="text-zinc-50">Salvar</Text>
             </Button>
           </View>

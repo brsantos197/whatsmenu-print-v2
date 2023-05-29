@@ -11,9 +11,12 @@ export type BluetoothDevice = {
 }
 
 export type BluetoothPrinter = BluetoothDevice & {
+  nickname?: string;
+  lines: number;
+  font: 'lg' | 'sm'
   copies: number;
   bold: boolean;
-  print: boolean
+  print: boolean;
 }
 
 export const useThermalPrinter = () => {
@@ -82,7 +85,8 @@ export const useThermalPrinter = () => {
       payload,
       macAddress,
       printerWidthMM,
-      printerNbrCharactersPerLine
+      printerNbrCharactersPerLine,
+      mmFeedPaper: 15
     })
   }
 
