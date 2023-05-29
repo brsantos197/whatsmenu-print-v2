@@ -1,25 +1,31 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Text, View, BackHandler, DeviceEventEmitter } from 'react-native';
+import { View, BackHandler, DeviceEventEmitter, ScrollView, useColorScheme } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { DateTime } from 'luxon';
 
-import * as TaskManager from 'expo-task-manager';
-import * as BackgroundFetch from 'expo-background-fetch';
+import colors from 'tailwindcss/colors'
 
 import { PizzaCartType, ProductCartType, RequestType } from '../@types/request.type';
 import { BluetoothPrinter, useThermalPrinter } from '../hooks/useThermalPrinter';
 import { useWebSocket } from '../hooks/useWebSocket';
-import { getUser, removeUser } from '../storage/user/user';
+import { getUser, removeUser } from '../storage/user';
 
 import { Page } from '../components/Page';
 import { TextStyled } from '../components/TextStyled';
 import { Button } from '../components/Button';
+import { DevicesModal } from '../components/DevicesModal';
+import { getLocalPrinters, setLocalPrinters } from '../storage/printers';
 
 export const Home = () => {
-  const [profile, setProfile] = useState<any>()
-  const [printers, setPrinters] = useState<BluetoothPrinter[]>([])
   const { navigate } = useNavigation()
   const { devices, print } = useThermalPrinter()
+  const colorScheme = useColorScheme()
+
+  const [profile, setProfile] = useState<any>()
+  const [printers, setPrinters] = useState<BluetoothPrinter[]>([])
+  const [showDevices, setShowDevices] = useState(false)
+
   const { socket } = useWebSocket(profile)
 
   const handleLogOff = async () => {
@@ -80,13 +86,11 @@ export const Home = () => {
     }
   }, [printers, profile])
 
-  // const registerBackgroundFetchAsync = async () => {
-  //   return BackgroundFetch.registerTaskAsync('PRINT_WEBSOCKETS', {
-  //     minimumInterval: 1, // 15 minutes
-  //     stopOnTerminate: false, // android only,
-  //     startOnBoot: true, // android only
-  //   });
-  // }
+  useEffect(() => {
+    if (printers.length) {
+      setLocalPrinters(printers)
+    }
+  }, [printers])
 
   useEffect(() => {
     if (profile) {
@@ -97,18 +101,21 @@ export const Home = () => {
     }
   }, [profile, printers])
 
-  TaskManager.getRegisteredTasksAsync()
-    .then(tasks => {
-      console.log(tasks, 'TASKS')
-    })
   useEffect(() => {
-    // registerBackgroundFetchAsync()
     getUser()
       .then(user => {
         if (user && !profile) {
           setProfile(user.profile)
         }
       })
+
+    getLocalPrinters()
+      .then(localPrinters => {
+        console.log(localPrinters, 'LOCAL');
+
+        setPrinters(localPrinters)
+      })
+
     BackHandler.addEventListener('hardwareBackPress', () => {
       BackHandler.exitApp()
       return true
@@ -122,28 +129,50 @@ export const Home = () => {
   }, [])
 
   return (
-    <Page>
-      <TextStyled>Home</TextStyled>
-      {devices.map((device) => (
-        <View key={device.macAddress}>
-          <Text className='text-white'>{device.deviceName}</Text>
-          <Button onPress={() => {
-            setPrinters(state => {
-              console.log('state', state)
-              if (!state.some(printer => printer.deviceName === device.deviceName)) {
-                return [...state, { ...device, copies: 1, print: true, bold: false }]
-              }
-              return state
-            })
-          }} ><Text className='text-white'>Conectar</Text></Button>
-        </View>
-      ))}
+    <Page className='justify-start'>
+      <View className='bg-zinc-800 p-4 mb-1 w-screen'>
+        <TextStyled className='text-2xl font-bold'>Configurações</TextStyled>
+      </View>
+      <View className='bg-zinc-800 p-4 w-screen flex-row gap-x-2 mt-2 items-center justify-center'>
+        <Button>
+          <TextStyled>Testar Impressão</TextStyled>
+        </Button>
+        <Button
+          onPress={() => setShowDevices(true)}
+        >
+          <TextStyled>Selecionar Impressoras</TextStyled>
+        </Button>
+      </View>
+      <View className='w-screen p-4 flex-1 items-start justify-start'>
+        <TextStyled className='font-bold text-2xl mb-4'>Impressoras:</TextStyled>
+        <ScrollView className='w-full'>
+          {printers.map(printer => (
+            <View className='flex-row items-center justify-between p-2' key={printer.deviceName}>
+              <TextStyled className='text-lg'>{printer.deviceName}</TextStyled>
+              <Button>
+                <MaterialIcons name="settings" color={colorScheme === 'dark' ? colors.zinc[50] : colors.zinc[950]} ></MaterialIcons>
+              </Button>
+            </View>
+          ))}
+        </ScrollView>
+      </View>
       <Button
         className='w-screen absolute bottom-0'
         onPress={handleLogOff}
       >
         <TextStyled>Deslogar</TextStyled>
       </Button>
+
+      <DevicesModal
+        show={showDevices}
+        devices={devices}
+        printers={printers}
+        cancel={() => setShowDevices(false)}
+        confirm={() => setShowDevices(false)}
+        onConfirm={(selectedPrinters) => {
+          setPrinters(selectedPrinters)
+        }}
+      />
     </Page>
   );
 }

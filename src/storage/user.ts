@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { USER } from "../storageConfig";
+import { USER } from "./storageConfig";
 
 export const setUser = async (user: any) => {
   try {

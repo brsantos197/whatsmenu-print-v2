@@ -4,16 +4,20 @@ import { PermissionsAndroid, Platform } from "react-native";
 import ThermalPrinterModule from 'react-native-thermal-printer'
 import * as ExpoDevice from "expo-device";
 
-export type BluetoothPrinter = {
+export type BluetoothDevice = {
   deviceName: string;
   macAddress: string;
+  selected?: boolean;
+}
+
+export type BluetoothPrinter = BluetoothDevice & {
   copies: number;
   bold: boolean;
   print: boolean
 }
 
 export const useThermalPrinter = () => {
-  const [devices, setDevices] = useState<any[]>([])
+  const [devices, setDevices] = useState<BluetoothDevice[]>([])
 
   const requestAndroid31Permissions = async () => {
     const bluetoothScanPermission = await PermissionsAndroid.request(
@@ -94,6 +98,6 @@ export const useThermalPrinter = () => {
 
   return {
     devices,
-    print
+    print,
   }
 }

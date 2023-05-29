@@ -6,7 +6,7 @@ import { TextStyled } from '../components/TextStyled';
 import { Input } from '../components/Input';
 import { useState, useEffect } from "react";
 import { api } from "../lib/axios";
-import { getUser, setUser } from "../storage/user/user";
+import { getUser, setUser } from "../storage/user";
 import { Loading } from "../components/Loading";
 import { Button } from "../components/Button";
 
