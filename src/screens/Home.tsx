@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View, DeviceEventEmitter, ScrollView, useColorScheme, PermissionsAndroid } from 'react-native';
+import { View, DeviceEventEmitter, ScrollView, useColorScheme, PermissionsAndroid, Permission } from 'react-native';
 import { useNavigation, useRoute, CommonActions } from '@react-navigation/native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 
@@ -40,7 +40,7 @@ export const Home = () => {
   }
 
   const requestBatteryOp = async () => {
-    const result = PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+    const result = PermissionsAndroid.request("android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" as Permission)
     console.log(result);
   }
 
