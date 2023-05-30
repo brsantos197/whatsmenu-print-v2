@@ -6,9 +6,13 @@ export const useWebSocket = (profile: any) => {
   const [socket, setSocket] = useState<WebSocket>()
   const [pongInterval, setPongInterval] = useState<NodeJS.Timeout>()
 
+  const connect = () => {
+    setSocket(new WebSocket('wss://rt2.whatsmenu.com.br/adonis-ws'))
+  }
+
   useEffect(() => {
     if (profile && !socket) {
-      setSocket(new WebSocket('wss://rt2.whatsmenu.com.br/adonis-ws'))
+      connect()
     }
   }, [profile])
 
@@ -81,6 +85,7 @@ export const useWebSocket = (profile: any) => {
   }, [])
 
   return {
-    socket
+    socket,
+    connect
   }
 }

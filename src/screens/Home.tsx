@@ -2,11 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { View, DeviceEventEmitter, ScrollView, useColorScheme } from 'react-native';
 import { useNavigation, useRoute, CommonActions } from '@react-navigation/native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
-import { DateTime } from 'luxon';
 
 import colors from 'tailwindcss/colors'
 
-import { PizzaCartType, ProductCartType, RequestType } from '../@types/request.type';
+import { RequestType } from '../@types/request.type';
 import { BluetoothPrinter, useThermalPrinter } from '../hooks/useThermalPrinter';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { getUser, removeUser } from '../storage/user';
@@ -17,6 +16,7 @@ import { Button } from '../components/Button';
 import { DevicesModal } from '../components/DevicesModal';
 import { getLocalPrinters, setLocalPrinters } from '../storage/printers';
 import { printText } from '../services/print.service';
+import { registerTaskWebSocket } from '../services/background.service';
 
 type RouteParams = {
   updatePrinters?: boolean
@@ -32,7 +32,7 @@ export const Home = () => {
   const [printers, setPrinters] = useState<BluetoothPrinter[]>([])
   const [showDevices, setShowDevices] = useState(false)
 
-  const { socket } = useWebSocket(profile)
+  const { socket, connect } = useWebSocket(profile)
 
   const handleLogOff = async () => {
     await removeUser()
@@ -54,7 +54,7 @@ export const Home = () => {
       } finally {
         await setLocalPrinters(printers)
         console.log(printers);
-        setPrinters(state => [...printers])
+        setPrinters(() => [...printers])
       }
     }
   }, [printers, profile])
@@ -74,7 +74,9 @@ export const Home = () => {
     if ((params as RouteParams)?.updatePrinters) {
       getLocalPrinters()
         .then(localPrinters => {
-          setPrinters(localPrinters)
+          if (localPrinters) {
+            setPrinters(localPrinters)
+          }
         })
     }
   }, [params])
@@ -107,10 +109,21 @@ export const Home = () => {
 
     getLocalPrinters()
       .then(localPrinters => {
-        setPrinters(localPrinters)
+        if (localPrinters) {
+          setPrinters(localPrinters)
+        }
       })
-
-
+      registerTaskWebSocket()
+      DeviceEventEmitter.addListener('background-pong', () => {
+        console.log('caiu aqui pong front');
+        if (socket) {
+          if (socket.readyState === socket.CLOSED) {
+            connect()
+          } else {
+            socket?.send(JSON.stringify({ t: 8 }))
+          }
+        }
+      })
   }, [])
 
   return (
@@ -133,7 +146,7 @@ export const Home = () => {
       <View className='w-screen p-4 flex-1 items-start justify-start'>
         <TextStyled className='font-bold text-2xl mb-4'>Impressoras:</TextStyled>
         <ScrollView className='w-full'>
-          {printers.map(printer => (
+          {printers?.map(printer => (
             <View className={`flex-row items-center justify-between p-2 ${printer.error ? 'bg-red-500/30 border border-red-500' : ''}`} key={printer.deviceName}>
               <View className='flex-row items-center justify-between'>
                 {printer.error && (
@@ -172,13 +185,3 @@ export const Home = () => {
     </Page>
   );
 }
-
-// TaskManager.defineTask('PRINT_WEBSOCKETS', async () => {
-//   // DeviceEventEmitter.emit('background-pong', new Date().toISOString())
-//   console.log('BACKGROUND MODE')
-//   new Promise((resolve) => setTimeout(() => resolve('foi'), 2000)).then(data => console.log(data))
-//   console.log(BackgroundFetch.BackgroundFetchResult.NewData);
-
-//   // Be sure to return the successful result type!
-//   return BackgroundFetch.BackgroundFetchResult.NewData;
-// })
