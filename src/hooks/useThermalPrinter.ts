@@ -16,7 +16,8 @@ export type BluetoothPrinter = BluetoothDevice & {
   font: 'lg' | 'sm'
   copies: number;
   bold: boolean;
-  print: boolean;
+  printerWidthMM: 58 | 80,
+  error?: boolean
 }
 
 export const useThermalPrinter = () => {
@@ -78,16 +79,27 @@ export const useThermalPrinter = () => {
     }
   };
 
-  const print = async (text: any, macAddress: string, printerWidthMM: 58 | 80) => {
-    const printerNbrCharactersPerLine = printerWidthMM === 58 ? 32 : 50
-    const payload = String(text).replaceAll('<hr>', `<b>${''.padStart(printerNbrCharactersPerLine, '=')}</b>\n`)
-    await ThermalPrinterModule.printBluetooth({
-      payload,
-      macAddress,
-      printerWidthMM,
-      printerNbrCharactersPerLine,
-      mmFeedPaper: 15
-    })
+  const print = async (text: any, printer: BluetoothPrinter) => {
+    try {
+      const { bold, copies, font, printerWidthMM, macAddress } = printer
+      const printerNbrCharactersPerLine = printerWidthMM === 58 ? 32 : 50
+      const payload = String(text)
+        .replaceAll('[CONTENT]', bold ? '<b>' : '')
+        .replaceAll('<hr>', `<b>${''.padStart(printerNbrCharactersPerLine, '=')}</b>\n`)
+      let copiesCount = 0
+      do {
+        await ThermalPrinterModule.printBluetooth({
+          payload,
+          macAddress,
+          printerWidthMM,
+          printerNbrCharactersPerLine,
+          mmFeedPaper: 15
+        })
+        copiesCount++
+      } while (copies > copiesCount);
+    } catch (error) {
+      throw error
+    }
   }
 
   useEffect(() => {

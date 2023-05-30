@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View, DeviceEventEmitter, ScrollView, useColorScheme, Switch } from 'react-native';
-import { useNavigation, CommonActions } from '@react-navigation/native';
+import { View, DeviceEventEmitter, ScrollView, useColorScheme } from 'react-native';
+import { useNavigation, useRoute, CommonActions } from '@react-navigation/native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { DateTime } from 'luxon';
 
@@ -16,9 +16,15 @@ import { TextStyled } from '../components/TextStyled';
 import { Button } from '../components/Button';
 import { DevicesModal } from '../components/DevicesModal';
 import { getLocalPrinters, setLocalPrinters } from '../storage/printers';
+import { printText } from '../services/print.service';
+
+type RouteParams = {
+  updatePrinters?: boolean
+}
 
 export const Home = () => {
   const { navigate, dispatch } = useNavigation()
+  const { params } = useRoute()
   const { devices, print } = useThermalPrinter()
   const colorScheme = useColorScheme()
 
@@ -33,66 +39,28 @@ export const Home = () => {
     navigate('auth')
   }
 
-  const cartPrintLayout = (type: 'product' | 'pizza', cart: ProductCartType[] | PizzaCartType[]): string => {
-    let text = ''
-    if (type === 'pizza') {
-      for (const pizza of cart as PizzaCartType[]) {
-        text +=
-          `${pizza.quantity}x | ${pizza.size} ${pizza.flavors.length} Sabor${pizza.flavors.length > 1 ? 'es' : ''} (${pizza.value})\n` +
-          pizza.flavors.map(flavor => `    ${flavor.name}\n`).join('') +
-          pizza.implementations.map(implementation => `    ${implementation.name} (${implementation.value})\n`).join('') +
-          `[R]${pizza.value}\n` +
-          '<hr>'
-      }
-    }
-    if (type === 'product') {
-
-    }
-    return text
-  }
-
-  const printText = (request: RequestType): string => {
-    let text = ''
-    text += `[C]<font size='big'><b>${profile.name}</b></font>\n\n`
-    text += `<b>${DateTime.fromSQL(request.created_at, { zone: profile.timeZone }).toFormat("dd/MM/yyyy HH:mm:ss")}</b>\n`
-    for (const [key, value] of Object.entries(request)) {
-      switch (key) {
-        case 'code': {
-          text += `<b>Pedido:</b> wm${value}-${request.type}\n`
-          break
-        }
-        case 'name': {
-          text += `<b>Cliente:</b> ${value}\n`
-          break
-        }
-        case 'contact': {
-          text += `<b>Tel:</b> ${value}\n<hr>`
-          break
-        }
-        case 'cartPizza': {
-          text += cartPrintLayout('pizza', value)
-          break
-        }
-      }
-
-    }
-    return text
-  }
-
   const printerConfig = (printer: BluetoothPrinter) => {
-    navigate('printer', {
-      printer
-    })
+    navigate('printer', { printer })
   }
 
   const printForAllPrinters = useCallback(async (text: string) => {
     for (const printer of printers) {
-      await print(text, printer.macAddress, 58)
+      try {
+        await print(text, printer)
+        printer.error = false
+      } catch (error) {
+        printer.error = true
+        console.error(error);
+      } finally {
+        await setLocalPrinters(printers)
+        console.log(printers);
+        setPrinters(state => [...printers])
+      }
     }
   }, [printers, profile])
 
   const printRequest = useCallback(async (request: RequestType) => {
-    const text = printText(request)
+    const text = printText(request, profile)
     await printForAllPrinters(text)
   }, [printers, profile])
 
@@ -101,6 +69,15 @@ export const Home = () => {
       setLocalPrinters(printers)
     }
   }, [printers])
+
+  useEffect(() => {
+    if ((params as RouteParams)?.updatePrinters) {
+      getLocalPrinters()
+        .then(localPrinters => {
+          setPrinters(localPrinters)
+        })
+    }
+  }, [params])
 
   useEffect(() => {
     if (profile) {
@@ -143,7 +120,7 @@ export const Home = () => {
       </View>
       <View className='dark:bg-zinc-800 light:bg-zinc-400  p-4 w-screen flex-row gap-x-2 mt-2 items-center justify-center'>
         <Button
-          onPress={() => printForAllPrinters('[C]<b>WHATSMENU IMPRESSORA</b>\n\n')}
+          onPress={() => printForAllPrinters('[CONTENT][C]\x1B<b>WHATSMENU IMPRESSORA</b>\n\n')}
         >
           <TextStyled>Testar Impressão</TextStyled>
         </Button>
@@ -157,8 +134,15 @@ export const Home = () => {
         <TextStyled className='font-bold text-2xl mb-4'>Impressoras:</TextStyled>
         <ScrollView className='w-full'>
           {printers.map(printer => (
-            <View className='flex-row items-center justify-between p-2' key={printer.deviceName}>
-              <TextStyled className='text-lg'>{printer.deviceName}</TextStyled>
+            <View className={`flex-row items-center justify-between p-2 ${printer.error ? 'bg-red-500/30 border border-red-500' : ''}`} key={printer.deviceName}>
+              <View className='flex-row items-center justify-between'>
+                {printer.error && (
+                  <View className='mr-4'>
+                    <MaterialIcons name='error' size={22} color={colors.red[500]} />
+                  </View>
+                )}
+                <TextStyled className='text-lg'>{printer.deviceName} {printer.nickname && `- (${printer.nickname})`}</TextStyled>
+              </View>
               <Button
                 onPress={() => printerConfig(printer)}
               >
