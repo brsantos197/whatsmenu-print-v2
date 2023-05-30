@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View, DeviceEventEmitter, ScrollView, useColorScheme } from 'react-native';
+import { View, DeviceEventEmitter, ScrollView, useColorScheme, PermissionsAndroid } from 'react-native';
 import { useNavigation, useRoute, CommonActions } from '@react-navigation/native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 
@@ -37,6 +37,11 @@ export const Home = () => {
   const handleLogOff = async () => {
     await removeUser()
     navigate('auth')
+  }
+
+  const requestBatteryOp = async () => {
+    const result = PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+    console.log(result);
   }
 
   const printerConfig = (printer: BluetoothPrinter) => {
@@ -124,6 +129,7 @@ export const Home = () => {
           }
         }
       })
+      requestBatteryOp()
   }, [])
 
   return (
