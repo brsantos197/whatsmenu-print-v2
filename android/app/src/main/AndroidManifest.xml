@@ -36,7 +36,7 @@
         <action android:name="android.intent.action.VIEW"/>
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
-        <data android:scheme="wm-app-print"/>
+        <data android:scheme="whatsmenu-print-v2"/>
         <data android:scheme="com.brsantos197.whatsmenuprintv2"/>
         <data android:scheme="exp+whatsmenu-print-v2"/>
       </intent-filter>

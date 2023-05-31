@@ -17,6 +17,7 @@ import { DevicesModal } from '../components/DevicesModal';
 import { getLocalPrinters, setLocalPrinters } from '../storage/printers';
 import { printText } from '../services/print.service';
 import { registerTaskWebSocket } from '../services/background.service';
+import { createURL, useURL } from 'expo-linking';
 
 type RouteParams = {
   updatePrinters?: boolean
@@ -33,6 +34,12 @@ export const Home = () => {
   const [showDevices, setShowDevices] = useState(false)
 
   const { socket, connect } = useWebSocket(profile)
+
+  const redirectURL = useURL()
+  const url = createURL('print', {})
+  console.log(url);
+  console.log(redirectURL);
+
 
   const handleLogOff = async () => {
     await removeUser()
@@ -118,18 +125,18 @@ export const Home = () => {
           setPrinters(localPrinters)
         }
       })
-      registerTaskWebSocket()
-      DeviceEventEmitter.addListener('background-pong', () => {
-        console.log('caiu aqui pong front');
-        if (socket) {
-          if (socket.readyState === socket.CLOSED) {
-            connect()
-          } else {
-            socket?.send(JSON.stringify({ t: 8 }))
-          }
+    registerTaskWebSocket()
+    DeviceEventEmitter.addListener('background-pong', () => {
+      console.log('caiu aqui pong front');
+      if (socket) {
+        if (socket.readyState === socket.CLOSED) {
+          connect()
+        } else {
+          socket?.send(JSON.stringify({ t: 8 }))
         }
-      })
-      requestBatteryOp()
+      }
+    })
+    requestBatteryOp()
   }, [])
 
   return (
