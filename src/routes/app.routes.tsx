@@ -1,17 +1,39 @@
+import { useColorScheme } from 'react-native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
-import { Auth } from '../screens/Auth'
+import colors from 'tailwindcss/colors'
+import MaterialIcons from '@expo/vector-icons/Ionicons';
 import { Home } from '../screens/Home'
 import { Printer } from '../screens/Printer'
+import { PrintersConfig } from '../screens/PrintersConfig'
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 
-const { Navigator, Screen } = createNativeStackNavigator()
+const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
 
 export const AppRoutes = () => {
+  const colorScheme = useColorScheme()
 
   return (
-    <Navigator screenOptions={{ headerShown: false, }}>
-      <Screen name="auth" component={Auth} />
-      <Screen name="home" component={Home} />
-      <Screen name="printer" component={Printer} />
-    </Navigator>
+    <Tab.Navigator screenOptions={({ route }) => ({
+      headerShown: false,
+      tabBarActiveTintColor: colors.green[500],
+      tabBarStyle: {
+        backgroundColor: colorScheme === 'dark' ? colors.zinc[950] : colors.zinc[50],
+        paddingVertical: 8
+      },
+      title: route.name === 'home' ? 'Painel' : 'Impressoras',
+      tabBarIcon: ({ color, size }) => <MaterialIcons name={route.name === 'home' ? 'desktop-outline' : 'print' } size={28} color={color} />
+    })}>
+      {/* <Screen name="auth" component={Auth} /> */}
+      <Tab.Screen name="home" component={Home} />
+      <Tab.Screen name="printers">
+        {() => (
+          <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen name='printers' component={PrintersConfig} />
+            <Stack.Screen name='printer' component={Printer} />
+          </Stack.Navigator>
+        )}
+      </Tab.Screen>
+    </Tab.Navigator>
   )
 }

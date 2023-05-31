@@ -29,7 +29,8 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.brsantos197.whatsmenuprintv2"
     },
     "android": {
       "adaptiveIcon": {

@@ -102,12 +102,18 @@ export const useThermalPrinter = () => {
     }
   }
 
+  const getDevices = async () => {
+    const devices = await ThermalPrinterModule.getBluetoothDeviceList()
+    console.log(devices, "AQUI");
+    
+    setDevices(devices)
+  }
+
   useEffect(() => {
     requestPermissions()
       .then(async granted => {
         if (granted) {
-          const newDevices = await ThermalPrinterModule.getBluetoothDeviceList()
-          setDevices(newDevices)
+          await getDevices()
         }
       })
   }, [])
@@ -115,5 +121,6 @@ export const useThermalPrinter = () => {
   return {
     devices,
     print,
+    getDevices
   }
 }
