@@ -23,7 +23,8 @@ export const Home = () => {
 
   const [profile, setProfile] = useState<any>()
   const [printers, setPrinters] = useState<BluetoothPrinter[]>([])
-  const [isReloading, setIsReloading] = useState(false)
+  const [offsetY, setOffsetY] = useState(0)
+  const [canUpdate, setCanUpdate] = useState(false)
   const webViewRef = useRef<WebView>(null)
   // const { socket, connect } = useWebSocket(profile)
 
@@ -34,15 +35,6 @@ export const Home = () => {
   //   navigate('auth')
   // }
 
-
-  const onPageLoad = () => { setIsReloading(false) }
-  const handleReloadPage = () => {
-    setIsReloading(true)
-    webViewRef.current?.reload()
-  }
-  const handleStopLoadPage = () => { webViewRef.current?.stopLoading() }
-  const handleGoBack = () => { webViewRef.current?.goBack() }
-  const handleGoForward = () => { webViewRef.current?.goForward() }
 
   const requestBatteryOp = async () => {
     const result = PermissionsAndroid.request("android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" as Permission)
@@ -135,27 +127,40 @@ export const Home = () => {
     })
     requestBatteryOp()
   }, [])
-  console.log(isReloading);
 
   return (
-    <View className='flex-1'>
-      <View className='flex-row justify-evenly items-center w-screen p-4 bg-zinc-200 dark:bg-zinc-800'>
-        <TouchableOpacity>
-          <MaterialIcons name='arrow-back' color={colors.green[500]} size={28} onPress={handleGoBack} />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <MaterialIcons name='arrow-forward' color={colors.green[500]} size={28} onPress={handleGoForward} />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <MaterialIcons name={isReloading ? 'close' : 'reload'} color={colors.green[500]} size={28} onPress={() => isReloading ? handleStopLoadPage() : handleReloadPage()} />
-        </TouchableOpacity>
-      </View>
+    // <View className='flex-1'>
+    //   <View className='flex-row justify-evenly items-center w-screen p-4 bg-zinc-200 dark:bg-zinc-800'>
+    //     <TouchableOpacity>
+    //       <MaterialIcons name='arrow-back' color={colors.green[500]} size={28} onPress={handleGoBack} />
+    //     </TouchableOpacity>
+    //     <TouchableOpacity>
+    //       <MaterialIcons name='arrow-forward' color={colors.green[500]} size={28} onPress={handleGoForward} />
+    //     </TouchableOpacity>
+    //     <TouchableOpacity>
+    //       <MaterialIcons name={isReloading ? 'close' : 'reload'} color={colors.green[500]} size={28} onPress={() => isReloading ? handleStopLoadPage() : handleReloadPage()} />
+    //     </TouchableOpacity>
+    //   </View>
       <WebView
         ref={webViewRef}
         source={{ uri: 'https://whatsmenu-adm-front-git-appprinter-grove-company.vercel.app/' }}
         className='flex-1'
-        onLoad={onPageLoad}
+        onScroll={(e) => {
+          setOffsetY(e.nativeEvent.contentOffset.y)
+        }}
+        onTouchMove={() => {
+          setCanUpdate(true)
+          if (offsetY <= 0) {
+            setOffsetY(state => state - 1)
+          }
+        }}
+        onTouchEnd={() => {
+          if (offsetY <= -5 && canUpdate) {
+            webViewRef.current?.reload()
+            setOffsetY(0)
+          }
+        }}
       />
-    </View>
+    // </View>
   );
 }
