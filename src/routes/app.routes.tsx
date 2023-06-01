@@ -18,18 +18,18 @@ export const AppRoutes = () => {
       headerShown: false,
       tabBarActiveTintColor: colors.green[500],
       tabBarStyle: {
-        backgroundColor: colorScheme === 'dark' ? colors.zinc[950] : colors.zinc[50],
+        backgroundColor: colorScheme === 'dark' ? colors.zinc[800] : colors.zinc[50],
         paddingVertical: 8
       },
       title: route.name === 'home' ? 'Painel' : 'Impressoras',
-      tabBarIcon: ({ color, size }) => <MaterialIcons name={route.name === 'home' ? 'desktop-outline' : 'print' } size={28} color={color} />
+      tabBarIcon: ({ color, size }) => <MaterialIcons name={route.name === 'home' ? 'desktop-outline' : 'print'} size={28} color={color} />
     })}>
       {/* <Screen name="auth" component={Auth} /> */}
       <Tab.Screen name="home" component={Home} />
       <Tab.Screen name="printers">
         {() => (
-          <Stack.Navigator screenOptions={{ headerShown: false }}>
-            <Stack.Screen name='printers' component={PrintersConfig} />
+          <Stack.Navigator initialRouteName='config' screenOptions={{ headerShown: false }}>
+            <Stack.Screen name='config' component={PrintersConfig} />
             <Stack.Screen name='printer' component={Printer} />
           </Stack.Navigator>
         )}

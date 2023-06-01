@@ -34,7 +34,7 @@ export const Printer = () => {
   }
 
   const labelStyle = {
-    color: colorScheme === 'dark' ? colors.zinc[50] : colors.zinc[950],
+    color: colorScheme === 'dark' ? colors.zinc[50] : colors.zinc[800],
     fontSize: 16,
     marginTop: 4,
     marginBottom: 4
@@ -52,17 +52,17 @@ export const Printer = () => {
 
   return (
     <Page className='justify-start'>
-      <View className='flex-row items-center justify-between dark:bg-zinc-800 light:bg-zinc-400 p-4 mb-1 w-screen'>
+      <View className='flex-row items-center justify-between bg-zinc-200 dark:bg-zinc-800 p-4 mb-1 w-screen'>
         <View className='flex-row items-center -ml-2'>
-          <MaterialIcons color={colors.zinc[50]} size={36} name='chevron-left' onPress={goBack} />
+          <MaterialIcons color={colorScheme === 'dark' ? colors.zinc[50] : colors.zinc[800]} size={36} name='chevron-left' onPress={goBack} />
           <TextStyled className='text-2xl font-bold'>Impressora</TextStyled>
         </View>
         <Button
           onPress={handleRemovePrinter}
           className='p-2 bg-red-500 flex-row items-center justify-center'
         >
-          <MaterialIcons color={colors.zinc[50]} size={16} name='delete' />
-          <Text className='font-bold text-zinc-50 ml-2'>Remover</Text>
+          <MaterialIcons color={colorScheme === 'dark' ? colors.zinc[50] : colors.zinc[800]} size={16} name='delete' />
+          <TextStyled className='font-bold ml-2'>Remover</TextStyled>
         </Button>
       </View>
       <ScrollView className='flex-1 px-4 mb-1 w-screen'>
@@ -173,18 +173,18 @@ export const Printer = () => {
           </TextStyled>
         </View>
       </ScrollView>
-      <View className='absolute p-4 bottom-0 dark:bg-zinc-950 light:bg-zinc-50 flex-row w-full justify-center items-center mt-2'>
+      <View className='absolute p-4 bottom-0 bg-zinc-100 dark:bg-zinc-950 flex-row w-full justify-center items-center mt-2'>
         <Button
           onPress={goBack}
           className='flex-1 bg-red-500'
         >
-          <Text className='text-zinc-50 font-bold'>Cancelar</Text>
+          <TextStyled className='font-bold'>Cancelar</TextStyled>
         </Button>
         <Button
           onPress={handleSavePrinter}
           className='flex-1 ml-2'
         >
-          <Text className='text-zinc-50 font-bold'>Pronto</Text>
+          <TextStyled className='font-bold'>Pronto</TextStyled>
         </Button>
       </View>
     </Page>

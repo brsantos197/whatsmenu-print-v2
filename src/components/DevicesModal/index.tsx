@@ -48,8 +48,8 @@ export const DevicesModal = ({ devices, printers, onConfirm, show, cancel, confi
       visible={show}
     >
       <View className='flex-1 items-center justify-center bg-zinc-700/50'>
-        <View className='dark:bg-zinc-950 light:bg-zinc-50 min-h-[25vh] max-h-[50vh] min-w-[75vw] max-w-[75vw] rounded-md items-start'>
-          <View className='p-4 bg-zinc-700 rounded-t-md w-full'>
+        <View className='bg-zinc-100 dark:bg-zinc-950 min-h-[25vh] max-h-[50vh] min-w-[75vw] max-w-[75vw] rounded-md items-start'>
+          <View className='p-4 bg-zinc-300 dark:bg-zinc-700 rounded-t-md w-full'>
             <TextStyled>Dispositivos Pareados</TextStyled>
           </View>
 
@@ -76,7 +76,7 @@ export const DevicesModal = ({ devices, printers, onConfirm, show, cancel, confi
             )}
             keyExtractor={item => item.macAddress}
           />
-          <View className='p-4 flex-row items-center justify-end rounded-b-md bg-zinc-700 w-full'>
+          <View className='p-4 flex-row items-center justify-end rounded-b-md bg-zinc-300 dark:bg-zinc-700 w-full'>
             <Button
               className="p-2 bg-red-500"
               onPress={() => {
@@ -84,7 +84,7 @@ export const DevicesModal = ({ devices, printers, onConfirm, show, cancel, confi
                 cancel()
               }}
             >
-              <Text className="text-zinc-50">Cancelar</Text>
+              <TextStyled>Cancelar</TextStyled>
             </Button>
             <Button
               className="p-2 mx-2"
@@ -93,7 +93,7 @@ export const DevicesModal = ({ devices, printers, onConfirm, show, cancel, confi
                 onConfirm && onConfirm(selectedPrinters)
               }}
             >
-              <Text className="text-zinc-50">Salvar</Text>
+              <TextStyled>Salvar</TextStyled>
             </Button>
           </View>
         </View>

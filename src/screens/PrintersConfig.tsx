@@ -178,10 +178,10 @@ export const PrintersConfig = () => {
 
   return (
     <Page className='justify-start relative'>
-      <View className='dark:bg-zinc-800 light:bg-zinc-400 p-4 mb-1 w-screen'>
+      <View className='bg-zinc-200 dark:bg-zinc-800 p-4 mb-1 w-screen'>
         <TextStyled className='text-2xl font-bold'>Configurações</TextStyled>
       </View>
-      <View className='dark:bg-zinc-800 light:bg-zinc-400  p-4 w-screen flex-row gap-x-2 mt-2 items-center justify-center'>
+      <View className='bg-zinc-200 dark:bg-zinc-800 p-4 w-screen flex-row gap-x-2 mt-2 items-center justify-center'>
         <Button
           onPress={() => printForAllPrinters('[CONTENT][C]\x1B<b>WHATSMENU IMPRESSORA</b>\n\n')}
         >
@@ -209,7 +209,7 @@ export const PrintersConfig = () => {
               <Button
                 onPress={() => printerConfig(printer)}
               >
-                <MaterialIcons name="settings" size={16} color={colorScheme === 'dark' ? colors.zinc[50] : colors.zinc[950]} ></MaterialIcons>
+                <MaterialIcons name="settings" size={16} color={colorScheme === 'dark' ? colors.zinc[50] : colors.zinc[800]} ></MaterialIcons>
               </Button>
             </View>
           ))}
