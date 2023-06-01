@@ -19,6 +19,7 @@ import { registerTaskWebSocket } from '../services/background.service';
 import { printText } from '../services/print.service';
 import { getLocalPrinters, setLocalPrinters } from '../storage/printers';
 import { BleManager } from 'react-native-ble-plx';
+import { useKeepAwake } from 'expo-keep-awake';
 
 type RouteParams = {
   updatePrinters?: boolean
@@ -34,10 +35,12 @@ export const PrintersConfig = () => {
   const [profile, setProfile] = useState<any>()
   const [printers, setPrinters] = useState<BluetoothPrinter[]>([])
   const [showDevices, setShowDevices] = useState(false)
+  useKeepAwake()
 
   // const { socket, connect } = useWebSocket(profile)
 
   let redirectURL = useURL()
+  console.log(redirectURL);
 
   const requestBatteryOp = async () => {
     PermissionsAndroid.request("android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" as Permission)

@@ -3,6 +3,7 @@ import { DeviceEventEmitter, Permission, PermissionsAndroid, View, NativeModules
 import { CommonActions, useNavigation, useRoute } from '@react-navigation/native';
 import MaterialIcons from '@expo/vector-icons/Ionicons';
 import colors from 'tailwindcss/colors'
+import { useKeepAwake } from 'expo-keep-awake';
 
 import { BluetoothPrinter, useThermalPrinter } from '../hooks/useThermalPrinter';
 import { getUser } from '../storage/user';
@@ -20,6 +21,7 @@ export const Home = () => {
   const { navigate, dispatch } = useNavigation()
   const { params } = useRoute()
   const { devices, print } = useThermalPrinter()
+  useKeepAwake()
 
   const [profile, setProfile] = useState<any>()
   const [printers, setPrinters] = useState<BluetoothPrinter[]>([])
@@ -29,6 +31,9 @@ export const Home = () => {
   // const { socket, connect } = useWebSocket(profile)
 
   let redirectURL = useURL()
+
+  console.log(redirectURL);
+  
 
   // const handleLogOff = async () => {
   //   await removeUser()
@@ -126,6 +131,7 @@ export const Home = () => {
       // }
     })
     requestBatteryOp()
+    
   }, [])
 
   return (
@@ -144,6 +150,8 @@ export const Home = () => {
       <WebView
         ref={webViewRef}
         source={{ uri: 'https://whatsmenu-adm-front-git-appprinter-grove-company.vercel.app/' }}
+        javaScriptCanOpenWindowsAutomatically={true}
+        mediaPlaybackRequiresUserAction={false}
         className='flex-1'
         onScroll={(e) => {
           setOffsetY(e.nativeEvent.contentOffset.y)
