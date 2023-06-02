@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { RequestType } from "../@types/request.type"
 import { DeviceEventEmitter } from "react-native"
+import BackgroundTimer from 'react-native-background-timer';
 
 export const useWebSocket = (profile: any) => {
   const [socket, setSocket] = useState<WebSocket>()
@@ -13,17 +14,22 @@ export const useWebSocket = (profile: any) => {
   const ononpen = (event: any) => {
     if (socket) {
       console.log('%c[ws-connected]:', 'color: #0f0', `on ${event.target.url}`, ` - ${new Date().toTimeString()}`)
-      DeviceEventEmitter.addListener('background-pong', (pong) => {
-        socket!.send(JSON.stringify({ t: 8 }))
-      })
-      const interval = setInterval(() => {
-        socket.send(JSON.stringify({ t: 8 }))
-      }, 1000 * 25);
-      setPongInterval(interval)
+      BackgroundTimer.runBackgroundTimer(() => {
+        console.log('PONG BACKGROUND');
+        socket?.send(JSON.stringify({ t: 8 }))
+      },
+        1000 * 25);
+      // DeviceEventEmitter.addListener('background-pong', (pong) => {
+      //   socket!.send(JSON.stringify({ t: 8 }))
+      // })
+      // const interval = setInterval(() => {
+      //   socket.send(JSON.stringify({ t: 8 }))
+      // }, 1000 * 25);
+      // setPongInterval(interval)
       socket.send(JSON.stringify({
         t: 1,
         d: {
-          topic: `print:${profile.slug}`
+          topic: `print:${profile?.slug}`
         }
       }))
       socket.onmessage = (event) => {
@@ -63,11 +69,11 @@ export const useWebSocket = (profile: any) => {
       }
       socket.onclose = (event) => {
         console.log('%c[ws-disconnected]:', 'color: #f00', `code ${event.code} ${event.reason}`, ` - ${new Date().toTimeString()}`)
-        clearInterval(pongInterval)
-        setSocket(state => {
-          state?.close()
-          return new WebSocket('wss://rt2.whatsmenu.com.br/adonis-ws')
-        })
+        // clearInterval(pongInterval)
+        // setSocket(state => {
+        //   state?.close()
+        //   return new WebSocket('wss://rt2.whatsmenu.com.br/adonis-ws')
+        // })
       }
       
     }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { DeviceEventEmitter, Permission, PermissionsAndroid, View, NativeModules, TouchableOpacity } from 'react-native';
+import { DeviceEventEmitter, Permission, PermissionsAndroid, View, NativeModules, TouchableOpacity, Alert } from 'react-native';
 import { CommonActions, useNavigation, useRoute } from '@react-navigation/native';
 import MaterialIcons from '@expo/vector-icons/Ionicons';
 import colors from 'tailwindcss/colors'
@@ -12,6 +12,7 @@ import { parse, useURL } from 'expo-linking';
 import { WebView } from 'react-native-webview';
 import { registerTaskWebSocket } from '../services/background.service';
 import { getLocalPrinters, setLocalPrinters } from '../storage/printers';
+import { useWebSocket } from '../hooks/useWebSocket';
 
 type RouteParams = {
   updatePrinters?: boolean
@@ -28,22 +29,17 @@ export const Home = () => {
   const [offsetY, setOffsetY] = useState(0)
   const [canUpdate, setCanUpdate] = useState(false)
   const webViewRef = useRef<WebView>(null)
-  // const { socket, connect } = useWebSocket(profile)
+  const { socket, connect } = useWebSocket(profile)
 
   let redirectURL = useURL()
-
-  console.log(redirectURL);
-  
 
   // const handleLogOff = async () => {
   //   await removeUser()
   //   navigate('auth')
   // }
 
-
   const requestBatteryOp = async () => {
     const result = PermissionsAndroid.request("android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" as Permission)
-    console.log(result);
   }
 
   const printForAllPrinters = useCallback(async (text: string) => {
@@ -120,18 +116,8 @@ export const Home = () => {
         }
       })
     registerTaskWebSocket()
-    DeviceEventEmitter.addListener('background-pong', () => {
-      // console.log('caiu aqui pong front');
-      // if (socket) {
-      //   if (socket.readyState === socket.CLOSED) {
-      //     connect()
-      //   } else {
-      //     socket?.send(JSON.stringify({ t: 8 }))
-      //   }
-      // }
-    })
     requestBatteryOp()
-    
+    connect()
   }, [])
 
   return (
@@ -147,28 +133,28 @@ export const Home = () => {
     //       <MaterialIcons name={isReloading ? 'close' : 'reload'} color={colors.green[500]} size={28} onPress={() => isReloading ? handleStopLoadPage() : handleReloadPage()} />
     //     </TouchableOpacity>
     //   </View>
-      <WebView
-        ref={webViewRef}
-        source={{ uri: 'https://whatsmenu-adm-front-git-appprinter-grove-company.vercel.app/' }}
-        javaScriptCanOpenWindowsAutomatically={true}
-        mediaPlaybackRequiresUserAction={false}
-        className='flex-1'
-        onScroll={(e) => {
-          setOffsetY(e.nativeEvent.contentOffset.y)
-        }}
-        onTouchMove={() => {
-          setCanUpdate(true)
-          if (offsetY <= 0) {
-            setOffsetY(state => state - 1)
-          }
-        }}
-        onTouchEnd={() => {
-          if (offsetY <= -5 && canUpdate) {
-            webViewRef.current?.reload()
-            setOffsetY(0)
-          }
-        }}
-      />
+    <WebView
+      ref={webViewRef}
+      source={{ uri: 'https://whatsmenu-adm-front-git-appprinter-grove-company.vercel.app/' }}
+      javaScriptCanOpenWindowsAutomatically={true}
+      mediaPlaybackRequiresUserAction={false}
+      className='flex-1'
+      onScroll={(e) => {
+        setOffsetY(e.nativeEvent.contentOffset.y)
+      }}
+      onTouchMove={() => {
+        setCanUpdate(true)
+        if (offsetY <= 0) {
+          setOffsetY(state => state - 1)
+        }
+      }}
+      onTouchEnd={() => {
+        if (offsetY <= -5 && canUpdate) {
+          webViewRef.current?.reload()
+          setOffsetY(0)
+        }
+      }}
+    />
     // </View>
   );
 }

@@ -20,6 +20,7 @@ import { printText } from '../services/print.service';
 import { getLocalPrinters, setLocalPrinters } from '../storage/printers';
 import { BleManager } from 'react-native-ble-plx';
 import { useKeepAwake } from 'expo-keep-awake';
+import BackgroundTimer from 'react-native-background-timer';
 
 type RouteParams = {
   updatePrinters?: boolean
@@ -37,10 +38,9 @@ export const PrintersConfig = () => {
   const [showDevices, setShowDevices] = useState(false)
   useKeepAwake()
 
-  // const { socket, connect } = useWebSocket(profile)
+  const { socket, connect } = useWebSocket(profile)
 
   let redirectURL = useURL()
-  console.log(redirectURL);
 
   const requestBatteryOp = async () => {
     PermissionsAndroid.request("android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" as Permission)
@@ -122,13 +122,11 @@ export const PrintersConfig = () => {
   }, [params])
 
   useEffect(() => {
-    if (profile) {
-      DeviceEventEmitter.removeAllListeners('request')
-      DeviceEventEmitter.addListener('request', async (request) => {
-        await printRequest(request)
-      })
-    }
-  }, [profile, printers])
+    DeviceEventEmitter.removeAllListeners('request')
+    DeviceEventEmitter.addListener('request', async (request) => {
+      await printForAllPrinters(`${request.name} ${request.code}`)
+    })
+  }, [printers])
 
   useEffect(() => {
     // getUser()
@@ -186,7 +184,7 @@ export const PrintersConfig = () => {
       </View>
       <View className='bg-zinc-200 dark:bg-zinc-800 p-4 w-screen flex-row gap-x-2 mt-2 items-center justify-center'>
         <Button
-          onPress={() => printForAllPrinters('[CONTENT][C]\x1B<b>WHATSMENU IMPRESSORA</b>\n\n')}
+          onPress={() => printForAllPrinters('[CONTENT][C]<b>WHATSMENU IMPRESSORA</b>\n\n')}
         >
           <TextStyled>Testar Impressão</TextStyled>
         </Button>
