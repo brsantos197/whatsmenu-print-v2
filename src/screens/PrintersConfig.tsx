@@ -38,8 +38,6 @@ export const PrintersConfig = () => {
   const [showDevices, setShowDevices] = useState(false)
   useKeepAwake()
 
-  const { socket, connect } = useWebSocket(profile)
-
   let redirectURL = useURL()
 
   const requestBatteryOp = async () => {
@@ -103,11 +101,14 @@ export const PrintersConfig = () => {
 
   useEffect(() => {
     if (redirectURL) {
-      printForAllPrinters('teste').then(() => {
-      })
+      console.log('caiu aqui');
+      
+      printForAllPrinters('teste')
       redirectURL = null
     }
   }, [redirectURL])
+
+  console.log(redirectURL);
 
   useEffect(() => {
     if ((params as RouteParams)?.updatePrinters) {

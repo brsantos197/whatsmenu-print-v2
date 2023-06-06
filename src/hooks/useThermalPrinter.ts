@@ -104,8 +104,6 @@ export const useThermalPrinter = () => {
 
   const getDevices = async () => {
     const devices = await ThermalPrinterModule.getBluetoothDeviceList()
-    console.log(devices, "AQUI");
-    
     setDevices(devices)
   }
 

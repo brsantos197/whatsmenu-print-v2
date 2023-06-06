@@ -25,7 +25,7 @@ export const AppRoutes = () => {
       title: route.name === 'home' ? 'Painel' : 'Impressoras',
       tabBarIcon: ({ color, size }) => <MaterialIcons name={route.name === 'home' ? 'desktop-outline' : 'print'} size={28} color={color} />
     })}>
-      <Tab.Screen name="auth" component={Auth} />
+      {/* <Tab.Screen name="auth" component={Auth} /> */}
       <Tab.Screen name="home" component={Home} />
       <Tab.Screen name="printers">
         {() => (

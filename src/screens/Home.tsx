@@ -29,7 +29,7 @@ export const Home = () => {
   const [offsetY, setOffsetY] = useState(0)
   const [canUpdate, setCanUpdate] = useState(false)
   const webViewRef = useRef<WebView>(null)
-  const { socket, connect } = useWebSocket(profile)
+  // const { socket, connect } = useWebSocket(profile)
 
   let redirectURL = useURL()
 
@@ -115,9 +115,7 @@ export const Home = () => {
           setPrinters(localPrinters)
         }
       })
-    registerTaskWebSocket()
     requestBatteryOp()
-    connect()
   }, [])
 
   return (
