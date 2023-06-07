@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DeviceEventEmitter, Permission, PermissionsAndroid, View, NativeModules, TouchableOpacity, Alert, AppRegistry, TaskProvider } from 'react-native';
 import { CommonActions, useNavigation, useRoute } from '@react-navigation/native';
 import MaterialIcons from '@expo/vector-icons/Ionicons';
@@ -29,10 +29,12 @@ export const Home = () => {
   const [printers, setPrinters] = useState<BluetoothPrinter[]>([])
   const [offsetY, setOffsetY] = useState(0)
   const [canUpdate, setCanUpdate] = useState(false)
+  const [isPrinting, setIsPrinting] = useState(false)
+  let redirectURL = useURL()
+  const [deeplink, setDeeplink] = useState<typeof redirectURL>(null)
+
   const webViewRef = useRef<WebView>(null)
   // const { socket, connect } = useWebSocket(profile)
-
-  let redirectURL = useURL()
 
   // const handleLogOff = async () => {
   //   await removeUser()
@@ -44,11 +46,10 @@ export const Home = () => {
   }
 
   const printForAllPrinters = useCallback(async (text: string) => {
-    console.log('caiu aqui');
-
-    for (const printer of printers) {
+    setDeeplink(state => null)
+    for await (const printer of printers) {
       try {
-        await print(text, printer)
+        print(text, printer)
         printer.error = false
       } catch (error) {
         printer.error = true
@@ -59,20 +60,13 @@ export const Home = () => {
         setPrinters(() => [...printers])
       }
     }
-  }, [printers, profile])
+  }, [printers, profile, redirectURL])
 
   useEffect(() => {
     if (printers.length) {
       setLocalPrinters(printers)
     }
   }, [printers])
-
-  useEffect(() => {
-    if (redirectURL) {
-      printForAllPrinters(decodeURI(parse(redirectURL).path!))
-      redirectURL = null
-    }
-  }, [redirectURL])
 
   useEffect(() => {
     if ((params as RouteParams)?.updatePrinters) {
@@ -84,6 +78,23 @@ export const Home = () => {
         })
     }
   }, [params])
+
+  console.log(redirectURL, deeplink, "redirect");
+  useEffect(() => {
+
+    setDeeplink(() => redirectURL)
+  }, [redirectURL])
+
+  useEffect(() => {
+    console.log(printers.length);
+    const intervalId = BackgroundTimer.setInterval(() => {
+      console.log('tic', deeplink, new Date().getSeconds());
+      if (deeplink) {
+        printForAllPrinters(decodeURI(parse(deeplink).path!))
+      }
+    }, 1000)
+    BackgroundTimer.clearInterval(intervalId - 1);
+  }, [deeplink, printers])
 
   // useEffect(() => {
   //   if (profile) {
@@ -119,17 +130,6 @@ export const Home = () => {
       })
     requestBatteryOp()
   }, [])
-
-  useEffect(() => {
-    if (printers.length) {
-      const intervalId = BackgroundTimer.setInterval(() => {
-        // this will be executed every 200 ms
-        // even when app is the the background
-        console.log('tic');
-        printForAllPrinters('ois')
-      }, 10000);
-    }
-  }, [printers])
 
   return (
     // <View className='flex-1'>
