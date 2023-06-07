@@ -101,14 +101,9 @@ export const PrintersConfig = () => {
 
   useEffect(() => {
     if (redirectURL) {
-      console.log('caiu aqui');
-      
-      printForAllPrinters('teste')
       redirectURL = null
     }
   }, [redirectURL])
-
-  console.log(redirectURL);
 
   useEffect(() => {
     if ((params as RouteParams)?.updatePrinters) {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { DeviceEventEmitter, Permission, PermissionsAndroid, View, NativeModules, TouchableOpacity, Alert } from 'react-native';
+import { DeviceEventEmitter, Permission, PermissionsAndroid, View, NativeModules, TouchableOpacity, Alert, AppRegistry, TaskProvider } from 'react-native';
 import { CommonActions, useNavigation, useRoute } from '@react-navigation/native';
 import MaterialIcons from '@expo/vector-icons/Ionicons';
 import colors from 'tailwindcss/colors'
@@ -13,6 +13,7 @@ import { WebView } from 'react-native-webview';
 import { registerTaskWebSocket } from '../services/background.service';
 import { getLocalPrinters, setLocalPrinters } from '../storage/printers';
 import { useWebSocket } from '../hooks/useWebSocket';
+import BackgroundTimer from 'react-native-background-timer';
 
 type RouteParams = {
   updatePrinters?: boolean
@@ -43,6 +44,8 @@ export const Home = () => {
   }
 
   const printForAllPrinters = useCallback(async (text: string) => {
+    console.log('caiu aqui');
+
     for (const printer of printers) {
       try {
         await print(text, printer)
@@ -66,8 +69,7 @@ export const Home = () => {
 
   useEffect(() => {
     if (redirectURL) {
-      printForAllPrinters(decodeURI(parse(redirectURL).path!)).then(() => {
-      })
+      printForAllPrinters(decodeURI(parse(redirectURL).path!))
       redirectURL = null
     }
   }, [redirectURL])
@@ -116,6 +118,12 @@ export const Home = () => {
         }
       })
     requestBatteryOp()
+    const intervalId = BackgroundTimer.setInterval(() => {
+      // this will be executed every 200 ms
+      // even when app is the the background
+      console.log('tic');
+      printForAllPrinters('ois')
+    }, 10000);
   }, [])
 
   return (
