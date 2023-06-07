@@ -118,13 +118,18 @@ export const Home = () => {
         }
       })
     requestBatteryOp()
-    const intervalId = BackgroundTimer.setInterval(() => {
-      // this will be executed every 200 ms
-      // even when app is the the background
-      console.log('tic');
-      printForAllPrinters('ois')
-    }, 10000);
   }, [])
+
+  useEffect(() => {
+    if (printers.length) {
+      const intervalId = BackgroundTimer.setInterval(() => {
+        // this will be executed every 200 ms
+        // even when app is the the background
+        console.log('tic');
+        printForAllPrinters('ois')
+      }, 10000);
+    }
+  }, [printers])
 
   return (
     // <View className='flex-1'>
