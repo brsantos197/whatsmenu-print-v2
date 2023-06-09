@@ -105,13 +105,12 @@ export const Home = () => {
       text = request.code
     })
     const intervalId = BackgroundTimer.setInterval(() => {
-      console.log(printers, text);
+      // console.log(printers, text);
       if (text) {
         printForAllPrinters(text)
         text = null
       }
     }, 1000)
-    BackgroundTimer.clearInterval(intervalId - 1);
   }, [printers])
 
   // useEffect(() => {

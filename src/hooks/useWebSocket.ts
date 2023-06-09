@@ -70,7 +70,7 @@ export const useWebSocket = (profile: any) => {
       }
       socket.onclose = (event) => {
         console.log('%c[ws-disconnected]:', 'color: #f00', `code ${event.code} ${event.reason}`, ` - ${new Date().toTimeString()}`)
-        BackgroundTimer.clearInterval(pongInterval! - 1);
+        BackgroundTimer.clearInterval(pongInterval!);
         // clearInterval(pongInterval)
         // setSocket(state => {
         //   state?.close()
