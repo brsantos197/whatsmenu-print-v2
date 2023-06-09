@@ -129,6 +129,9 @@ export const Home = () => {
         }
       })
     requestBatteryOp()
+    DeviceEventEmitter.addListener('printers:updated', (printers) => {
+      setPrinters(printers)
+    })
   }, [])
 
   return (

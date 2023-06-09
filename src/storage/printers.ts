@@ -1,10 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { PRINTERS } from "./storageConfig";
 import { BluetoothPrinter } from "../hooks/useThermalPrinter";
+import { DeviceEventEmitter } from "react-native";
 
 export const setLocalPrinters = async (printers: BluetoothPrinter[]) => {
   try {
     await AsyncStorage.setItem(PRINTERS, JSON.stringify(printers))
+    DeviceEventEmitter.emit('printers:updated', printers)
   } catch (error) {
     throw error
   }
