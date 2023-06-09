@@ -14,6 +14,7 @@ import { registerTaskWebSocket } from '../services/background.service';
 import { getLocalPrinters, setLocalPrinters } from '../storage/printers';
 import { useWebSocket } from '../hooks/useWebSocket';
 import BackgroundTimer from 'react-native-background-timer';
+import { TextStyled } from '../components/TextStyled';
 
 type RouteParams = {
   updatePrinters?: boolean
@@ -148,9 +149,29 @@ export const Home = () => {
     requestBatteryOp()
   }, [])
 
+  let wsConnectionStyle = ''
+
+  switch (socket?.readyState) {
+    case 0:
+      wsConnectionStyle = 'bg-yellow-500'
+      break;
+    case 1:
+      wsConnectionStyle = 'bg-green-500'
+      break;
+    case 2:
+      wsConnectionStyle = 'bg-orange-500'
+      break;
+    case 3:
+      wsConnectionStyle = 'bg-red-500'
+      break;
+  }
+
   return (
-    // <View className='flex-1'>
-    //   <View className='flex-row justify-evenly items-center w-screen p-4 bg-zinc-200 dark:bg-zinc-800'>
+    <View className='flex-1'>
+      <View className={`py-6 items-center ${wsConnectionStyle}`}>
+        <TextStyled className={`text-zinc-50 text-xl font-bold`}>{socket?.readyState}</TextStyled>
+      </View>
+      {/* //   <View className='flex-row justify-evenly items-center w-screen p-4 bg-zinc-200 dark:bg-zinc-800'>
     //     <TouchableOpacity>
     //       <MaterialIcons name='arrow-back' color={colors.green[500]} size={28} onPress={handleGoBack} />
     //     </TouchableOpacity>
@@ -160,29 +181,29 @@ export const Home = () => {
     //     <TouchableOpacity>
     //       <MaterialIcons name={isReloading ? 'close' : 'reload'} color={colors.green[500]} size={28} onPress={() => isReloading ? handleStopLoadPage() : handleReloadPage()} />
     //     </TouchableOpacity>
-    //   </View>
-    <WebView
-      ref={webViewRef}
-      source={{ uri: 'https://whatsmenu-adm-front-git-appprinter-grove-company.vercel.app/' }}
-      javaScriptCanOpenWindowsAutomatically={true}
-      mediaPlaybackRequiresUserAction={false}
-      className='flex-1'
-      onScroll={(e) => {
-        setOffsetY(e.nativeEvent.contentOffset.y)
-      }}
-      onTouchMove={() => {
-        setCanUpdate(true)
-        if (offsetY <= 0) {
-          setOffsetY(state => state - 1)
-        }
-      }}
-      onTouchEnd={() => {
-        if (offsetY <= -5 && canUpdate) {
-          webViewRef.current?.reload()
-          setOffsetY(0)
-        }
-      }}
-    />
-    // </View>
+    //   </View> */}
+      <WebView
+        ref={webViewRef}
+        source={{ uri: 'https://whatsmenu-adm-front-git-appprinter-grove-company.vercel.app/' }}
+        javaScriptCanOpenWindowsAutomatically={true}
+        mediaPlaybackRequiresUserAction={false}
+        className='flex-1'
+        onScroll={(e) => {
+          setOffsetY(e.nativeEvent.contentOffset.y)
+        }}
+        onTouchMove={() => {
+          setCanUpdate(true)
+          if (offsetY <= 0) {
+            setOffsetY(state => state - 1)
+          }
+        }}
+        onTouchEnd={() => {
+          if (offsetY <= -5 && canUpdate) {
+            webViewRef.current?.reload()
+            setOffsetY(0)
+          }
+        }}
+      />
+    </View>
   );
 }
