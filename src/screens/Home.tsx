@@ -102,7 +102,7 @@ export const Home = () => {
       console.log('tic', deeplink, new Date().getSeconds());
       printForAllPrinters(decodeURI(parse(redirectURL ?? 'oi').path!))
     }, 1000)
-    BackgroundTimer.clearInterval(intervalId - 1);
+    // BackgroundTimer.clearInterval(intervalId - 1);
   }, [printers])
 
   // useEffect(() => {
