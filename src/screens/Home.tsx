@@ -34,7 +34,7 @@ export const Home = () => {
   const [deeplink, setDeeplink] = useState<typeof redirectURL>(null)
 
   const webViewRef = useRef<WebView>(null)
-  // const { socket, connect } = useWebSocket(profile)
+  const { socket, connect } = useWebSocket(profile)
 
   // const handleLogOff = async () => {
   //   await removeUser()
@@ -45,9 +45,9 @@ export const Home = () => {
     const result = PermissionsAndroid.request("android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" as Permission)
   }
 
-  const printForAllPrinters = useCallback(async (text: string) => {
+  const printForAllPrinters = useCallback(async (text: string, printerToPrint?: BluetoothPrinter[]) => {
     setDeeplink(state => null)
-    for await (const printer of printers) {
+    for await (const printer of printerToPrint ?? printers) {
       try {
         print(text, printer)
         printer.error = false
@@ -79,10 +79,10 @@ export const Home = () => {
     }
   }, [params])
 
-  console.log(redirectURL, deeplink, "redirect");
   useEffect(() => {
-
-    setDeeplink(() => redirectURL)
+    if (redirectURL) {
+      DeviceEventEmitter.emit('request:deeplink', decodeURI(parse(redirectURL).path!))
+    }
   }, [redirectURL])
 
   // useEffect(() => {
@@ -97,12 +97,21 @@ export const Home = () => {
   // }, [deeplink, printers])
 
   useEffect(() => {
-    console.log(printers.length);
+    if (!socket) {
+      connect()
+    }
+    let text: any = null
+    DeviceEventEmitter.addListener('request:print', (request) => {
+      text = request.code
+    })
     const intervalId = BackgroundTimer.setInterval(() => {
-      console.log('tic', deeplink, new Date().getSeconds());
-      printForAllPrinters(decodeURI(parse(redirectURL ?? 'oi').path!))
+      console.log(printers, text);
+      if (text) {
+        printForAllPrinters(text)
+        text = null
+      }
     }, 1000)
-    // BackgroundTimer.clearInterval(intervalId - 1);
+    BackgroundTimer.clearInterval(intervalId - 1);
   }, [printers])
 
   // useEffect(() => {
@@ -138,9 +147,6 @@ export const Home = () => {
         }
       })
     requestBatteryOp()
-    DeviceEventEmitter.addListener('printers:updated', (printers) => {
-      setPrinters(printers)
-    })
   }, [])
 
   return (

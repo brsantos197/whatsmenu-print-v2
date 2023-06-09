@@ -4,8 +4,9 @@ import { DeviceEventEmitter } from "react-native"
 import BackgroundTimer from 'react-native-background-timer';
 
 export const useWebSocket = (profile: any) => {
+  profile = { slug: 'dboamexico' }
   const [socket, setSocket] = useState<WebSocket>()
-  const [pongInterval, setPongInterval] = useState<NodeJS.Timeout>()
+  const [pongInterval, setPongInterval] = useState<number>()
 
   const connect = () => {
     setSocket(new WebSocket('wss://rt2.whatsmenu.com.br/adonis-ws'))
@@ -14,11 +15,11 @@ export const useWebSocket = (profile: any) => {
   const ononpen = (event: any) => {
     if (socket) {
       console.log('%c[ws-connected]:', 'color: #0f0', `on ${event.target.url}`, ` - ${new Date().toTimeString()}`)
-      BackgroundTimer.runBackgroundTimer(() => {
-        console.log('PONG BACKGROUND');
-        socket?.send(JSON.stringify({ t: 8 }))
-      },
-        1000 * 25);
+      const intervalId = BackgroundTimer.setInterval(() => {
+        socket.send(JSON.stringify({ t: 8 }))
+        // console.log('tic', new Date().getSeconds());
+      }, 25 * 1000)
+      setPongInterval(intervalId)
       // DeviceEventEmitter.addListener('background-pong', (pong) => {
       //   socket!.send(JSON.stringify({ t: 8 }))
       // })
@@ -55,7 +56,7 @@ export const useWebSocket = (profile: any) => {
                   return -1
                 }
               }).forEach(request => {
-                DeviceEventEmitter.emit('request', request)
+                DeviceEventEmitter.emit('request:print', request)
                 console.log(`%c[ws-request-${request.type}]:`, `color: ${colors[request.type]}`, `code ${request.code}`, `${request.tentatives > 0 ? request.tentatives + ' tentaiva reenvio' : ''}`, ` - ${new Date().toTimeString()}`)
               });
             }
@@ -69,13 +70,14 @@ export const useWebSocket = (profile: any) => {
       }
       socket.onclose = (event) => {
         console.log('%c[ws-disconnected]:', 'color: #f00', `code ${event.code} ${event.reason}`, ` - ${new Date().toTimeString()}`)
+        BackgroundTimer.clearInterval(pongInterval! - 1);
         // clearInterval(pongInterval)
         // setSocket(state => {
         //   state?.close()
         //   return new WebSocket('wss://rt2.whatsmenu.com.br/adonis-ws')
         // })
       }
-      
+
     }
   }
 
