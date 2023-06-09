@@ -85,16 +85,25 @@ export const Home = () => {
     setDeeplink(() => redirectURL)
   }, [redirectURL])
 
+  // useEffect(() => {
+  //   console.log(printers.length);
+  //   const intervalId = BackgroundTimer.setInterval(() => {
+  //     console.log('tic', deeplink, new Date().getSeconds());
+  //     if (deeplink) {
+  //       printForAllPrinters(decodeURI(parse(deeplink).path!))
+  //     }
+  //   }, 1000)
+  //   BackgroundTimer.clearInterval(intervalId - 1);
+  // }, [deeplink, printers])
+
   useEffect(() => {
     console.log(printers.length);
     const intervalId = BackgroundTimer.setInterval(() => {
       console.log('tic', deeplink, new Date().getSeconds());
-      if (deeplink) {
-        printForAllPrinters(decodeURI(parse(deeplink).path!))
-      }
+      printForAllPrinters(decodeURI(parse(redirectURL ?? 'oi').path!))
     }, 1000)
     BackgroundTimer.clearInterval(intervalId - 1);
-  }, [deeplink, printers])
+  }, [printers])
 
   // useEffect(() => {
   //   if (profile) {
