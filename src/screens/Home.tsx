@@ -3,6 +3,9 @@ import { DeviceEventEmitter, Permission, PermissionsAndroid, View, NativeModules
 import { CommonActions, useNavigation, useRoute } from '@react-navigation/native';
 import MaterialIcons from '@expo/vector-icons/Ionicons';
 import colors from 'tailwindcss/colors'
+
+import notifee, { AndroidImportance } from "@notifee/react-native";
+
 import { useKeepAwake } from 'expo-keep-awake';
 
 import { BluetoothPrinter, useThermalPrinter } from '../hooks/useThermalPrinter';
@@ -15,6 +18,7 @@ import { getLocalPrinters, setLocalPrinters } from '../storage/printers';
 import { useWebSocket } from '../hooks/useWebSocket';
 import BackgroundTimer from 'react-native-background-timer';
 import { TextStyled } from '../components/TextStyled';
+import Button from '../components/Button';
 
 type RouteParams = {
   updatePrinters?: boolean
@@ -63,6 +67,24 @@ export const Home = () => {
     }
   }, [printers, profile, redirectURL])
 
+  const displayNotification = async () => {
+    await notifee.requestPermission()
+
+    const channelId = await notifee.createChannel({
+      id: 'test',
+      name: 'requests',
+      vibration: true,
+      importance: AndroidImportance.HIGH
+    })
+
+    await notifee.displayNotification({
+      id: '7',
+      title: 'Olha o pedido, WhatsMenu!',
+      body: 'Chegou pedido pra impressão.',
+      android: { channelId }
+    })
+  }
+
   useEffect(() => {
     if (printers.length) {
       setLocalPrinters(printers)
@@ -103,16 +125,19 @@ export const Home = () => {
     }
     let text: any = null
     DeviceEventEmitter.addListener('request:print', (request) => {
+      displayNotification()
+      // printForAllPrinters(request.code)
       text = request.code
     })
+    
     const intervalId = BackgroundTimer.setInterval(() => {
       // console.log(printers, text);
       if (text) {
-        printForAllPrinters(text)
         text = null
+        displayNotification()
       }
     }, 1000)
-  }, [printers])
+  }, [])
 
   // useEffect(() => {
   //   if (profile) {
@@ -170,6 +195,9 @@ export const Home = () => {
     <View className='flex-1'>
       <View className={`py-6 items-center ${wsConnectionStyle}`}>
         <TextStyled className={`text-zinc-50 text-xl font-bold`}>{socket?.readyState}</TextStyled>
+        <Button className='bg-orange-500' onPress={displayNotification}>
+          <TextStyled>Notificar</TextStyled>
+        </Button>
       </View>
       {/* //   <View className='flex-row justify-evenly items-center w-screen p-4 bg-zinc-200 dark:bg-zinc-800'>
     //     <TouchableOpacity>

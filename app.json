@@ -18,6 +18,17 @@
           ],
           "bluetoothAlwaysPemisson": "Allow $(PRODUCT_NAME) to connect to bluetooth devices"
         }
+      ],
+      "@notifee/react-native",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 33,
+            "targetSdkVersion": 33,
+            "buildToolsVersion": "33.0.0"
+          }
+        }
       ]
     ],
     "splash": {
