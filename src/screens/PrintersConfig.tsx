@@ -170,7 +170,6 @@ export const PrintersConfig = () => {
     })
 
     const intervalId = BackgroundTimer.setInterval(() => {
-      displayNotification()
       if (request) {
         printRequest(request)
         request = null
@@ -196,7 +195,7 @@ export const PrintersConfig = () => {
   }
   return (
     <Page className='justify-start relative'>
-      <View className={`py-4 items-center ${wsConnectionStyle}`}>
+      <View className={`py-4 w-screen items-center ${wsConnectionStyle}`}>
         <TextStyled className={`text-zinc-50 text-xl font-bold`}>{socket?.readyState}</TextStyled>
         <Button className='bg-orange-500' onPress={displayNotification}>
           <TextStyled>Notificar</TextStyled>
