@@ -21,6 +21,7 @@ import { getLocalPrinters, setLocalPrinters } from '../storage/printers';
 import { BleManager } from 'react-native-ble-plx';
 import { useKeepAwake } from 'expo-keep-awake';
 import BackgroundTimer from 'react-native-background-timer';
+import notifee, { AndroidImportance } from "@notifee/react-native";
 
 type RouteParams = {
   updatePrinters?: boolean
@@ -28,7 +29,6 @@ type RouteParams = {
 
 export const PrintersConfig = () => {
   const { navigate, dispatch } = useNavigation()
-  const { params } = useRoute()
   const { devices, print, getDevices } = useThermalPrinter()
   const colorScheme = useColorScheme()
   const bleManager = useMemo(() => new BleManager(), []);
@@ -37,18 +37,37 @@ export const PrintersConfig = () => {
   const [printers, setPrinters] = useState<BluetoothPrinter[]>([])
   const [showDevices, setShowDevices] = useState(false)
   useKeepAwake()
+  const { socket, connect } = useWebSocket(profile)
 
-  let redirectURL = useURL()
+  const displayNotification = async () => {
+    await notifee.requestPermission()
+
+    const channelId = await notifee.createChannel({
+      id: 'test',
+      name: 'requests',
+      vibration: true,
+      importance: AndroidImportance.HIGH
+    })
+
+    await notifee.displayNotification({
+      id: '7',
+      title: 'Olha o pedido, WhatsMenu!',
+      body: 'Chegou pedido pra impressão.',
+      android: { channelId }
+    })
+  }
 
   const requestBatteryOp = async () => {
     PermissionsAndroid.request("android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" as Permission)
   }
 
   const printerConfig = (printer: BluetoothPrinter) => {
+    displayNotification()
     navigate('printer', { printer })
   }
 
-  const printForAllPrinters = useCallback(async (text: string) => {
+  const printForAllPrinters = async (text: string) => {
+    const printers = await getLocalPrinters()
     for (const printer of printers) {
       try {
         await print(text, printer)
@@ -58,16 +77,14 @@ export const PrintersConfig = () => {
         console.error(error);
       } finally {
         await setLocalPrinters(printers)
-        console.log(printers);
-        setPrinters(() => [...printers])
       }
     }
-  }, [printers, profile])
+  }
 
-  const printRequest = useCallback(async (request: RequestType) => {
-    const text = printText(request, profile)
-    await printForAllPrinters(text)
-  }, [printers, profile])
+  const printRequest = async (request: RequestType) => {
+    const text = await printText(request)
+    printForAllPrinters(text)
+  }
 
   const showBluetoothAlert = () => {
     Alert.alert(
@@ -93,53 +110,28 @@ export const PrintersConfig = () => {
     );
   }
 
-  useEffect(() => {
-    if (printers.length) {
-      setLocalPrinters(printers)
-    }
-  }, [printers])
+  // AUTH
+  const handleLogOff = async () => {
+    await removeUser()
+    navigate('auth')
+  }
 
   useEffect(() => {
-    if (redirectURL) {
-      redirectURL = null
-    }
-  }, [redirectURL])
+    getUser()
+      .then(user => {
+        if (user && !profile) {
+          setProfile(user.profile)
+          dispatch(state => {
+            const routes = state.routes.filter(r => r.name !== 'auth');
 
-  useEffect(() => {
-    if ((params as RouteParams)?.updatePrinters) {
-      getLocalPrinters()
-        .then(localPrinters => {
-          if (localPrinters) {
-            setPrinters(localPrinters)
-          }
-        })
-        .catch(error => console.error)
-    }
-  }, [params])
-
-  useEffect(() => {
-    DeviceEventEmitter.removeAllListeners('request')
-    DeviceEventEmitter.addListener('request', async (request) => {
-      await printForAllPrinters(`${request.name} ${request.code}`)
-    })
-  }, [printers])
-
-  useEffect(() => {
-    // getUser()
-    //   .then(user => {
-    //     if (user && !profile) {
-    //       setProfile(user.profile)
-    //       dispatch(state => {
-    //         const routes = state.routes.filter(r => r.name !== 'auth');
-
-    //         return CommonActions.reset({
-    //           ...state,
-    //           routes,
-    //           index: routes.length - 1,
-    //         });
-    //       })
-    //     }
-    //   })
+            return CommonActions.reset({
+              ...state,
+              routes,
+              index: routes.length - 1,
+            });
+          })
+        }
+      })
 
     bleManager.state()
       .then(state => {
@@ -159,18 +151,31 @@ export const PrintersConfig = () => {
           setPrinters(localPrinters)
         }
       })
-
-    // registerTaskWebSocket()
-    // DeviceEventEmitter.addListener('background-pong', () => {
-    //   if (socket) {
-    //     if (socket.readyState === socket.CLOSED) {
-    //       connect()
-    //     } else {
-    //       socket?.send(JSON.stringify({ t: 8 }))
-    //     }
-    //   }
-    // })
     requestBatteryOp()
+  }, [])
+
+  useEffect(() => {
+    DeviceEventEmitter.removeAllListeners('request:print')
+    if (!socket) {
+      connect()
+    }
+    let request: RequestType | null = null
+    DeviceEventEmitter.addListener('request:print', (requestData) => {
+      displayNotification()
+      request = requestData
+    })
+
+    DeviceEventEmitter.addListener('printers:updated', (localPrinters: BluetoothPrinter[]) => {
+      localPrinters.sort((a, b) => a.error ? 1 : -1)
+      setPrinters(localPrinters)
+    })
+
+    const intervalId = BackgroundTimer.setInterval(() => {
+      if (request) {
+        printRequest(request)
+        request = null
+      }
+    }, 500)
   }, [])
 
   return (
@@ -180,7 +185,7 @@ export const PrintersConfig = () => {
       </View>
       <View className='bg-zinc-200 dark:bg-zinc-800 p-4 w-screen flex-row gap-x-2 mt-2 items-center justify-center'>
         <Button
-          onPress={() => printForAllPrinters('[CONTENT][C]<b>WHATSMENU IMPRESSORA</b>\n\n')}
+          onPress={async () => await printForAllPrinters('[CONTENT][C]<b>WHATSMENU IMPRESSORA</b>\n\n')}
         >
           <TextStyled>Testar Impressão</TextStyled>
         </Button>
@@ -212,12 +217,12 @@ export const PrintersConfig = () => {
           ))}
         </ScrollView>
       </View>
-      {/* <Button
+      <Button
         className='w-screen absolute bottom-0'
         onPress={handleLogOff}
       >
         <TextStyled>Deslogar</TextStyled>
-      </Button> */}
+      </Button>
 
       <DevicesModal
         show={showDevices}
@@ -225,8 +230,8 @@ export const PrintersConfig = () => {
         printers={printers}
         cancel={() => setShowDevices(false)}
         confirm={() => setShowDevices(false)}
-        onConfirm={(selectedPrinters) => {
-          setPrinters(selectedPrinters)
+        onConfirm={async (selectedPrinters) => {
+          setLocalPrinters(selectedPrinters)
         }}
       />
     </Page>

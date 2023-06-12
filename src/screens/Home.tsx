@@ -128,16 +128,12 @@ export const Home = () => {
     }
     let text: any = null
     DeviceEventEmitter.addListener('request:print', (request) => {
-      // printForAllPrinters(request.code)
-      // text = request.code
+      printForAllPrinters(request.code)
+      text = request.code
     })
-
-    DeviceEventEmitter.addListener('request:deeplink', (data) => {
-      text = data
-    })
+   
 
     const intervalId = BackgroundTimer.setInterval(() => {
-      // console.log(printers, text);
       if (text) {
         printForAllPrinters(text)
           .then(() => {

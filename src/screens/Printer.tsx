@@ -42,12 +42,12 @@ export const Printer = () => {
 
   const handleRemovePrinter = async () => {
     await removePrinter(printer.macAddress)
-    navigate('home', { updatePrinters: true })
+    goBack()
   }
 
   const handleSavePrinter = async () => {
     await updatePrinter(printer)
-    navigate('home', { updatePrinters: true })
+    goBack()
   }
 
   return (

@@ -1,5 +1,6 @@
 import { DateTime } from "luxon"
 import { PizzaCartType, ProductCartType, RequestType } from "../@types/request.type"
+import { getUser } from "../storage/user"
 
 const cartPrintLayout = (type: 'product' | 'pizza', cart: ProductCartType[] | PizzaCartType[]): string => {
   let text = ''
@@ -27,7 +28,8 @@ const cartPrintLayout = (type: 'product' | 'pizza', cart: ProductCartType[] | Pi
   return text
 }
 
-const printText = (request: RequestType, profile: any): string => {
+const printText = async (request: RequestType): Promise<string> => {
+  const { profile } = await getUser()
   let text = ''
   let header = ''
   let carts = '<cartPizza><cartProduct>'

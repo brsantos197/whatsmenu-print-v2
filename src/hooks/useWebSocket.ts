@@ -4,7 +4,6 @@ import { DeviceEventEmitter } from "react-native"
 import BackgroundTimer from 'react-native-background-timer';
 
 export const useWebSocket = (profile: any) => {
-  profile = { slug: 'dboamexico' }
   const [socket, setSocket] = useState<WebSocket>()
   const [pongInterval, setPongInterval] = useState<number>()
 
@@ -17,16 +16,8 @@ export const useWebSocket = (profile: any) => {
       console.log('%c[ws-connected]:', 'color: #0f0', `on ${event.target.url}`, ` - ${new Date().toTimeString()}`)
       const intervalId = BackgroundTimer.setInterval(() => {
         socket.send(JSON.stringify({ t: 8 }))
-        // console.log('tic', new Date().getSeconds());
       }, 25 * 1000)
       setPongInterval(intervalId)
-      // DeviceEventEmitter.addListener('background-pong', (pong) => {
-      //   socket!.send(JSON.stringify({ t: 8 }))
-      // })
-      // const interval = setInterval(() => {
-      //   socket.send(JSON.stringify({ t: 8 }))
-      // }, 1000 * 25);
-      // setPongInterval(interval)
       socket.send(JSON.stringify({
         t: 1,
         d: {
@@ -71,11 +62,6 @@ export const useWebSocket = (profile: any) => {
       socket.onclose = (event) => {
         console.log('%c[ws-disconnected]:', 'color: #f00', `code ${event.code} ${event.reason}`, ` - ${new Date().toTimeString()}`)
         BackgroundTimer.clearInterval(pongInterval!);
-        // clearInterval(pongInterval)
-        // setSocket(state => {
-        //   state?.close()
-        //   return new WebSocket('wss://rt2.whatsmenu.com.br/adonis-ws')
-        // })
       }
 
     }
@@ -88,10 +74,10 @@ export const useWebSocket = (profile: any) => {
   }, [profile])
 
   useEffect(() => {
-    if (socket && !socket.onopen) {
+    if ((socket && !socket.onopen) && profile) {
       socket.onopen = ononpen
     }
-  }, [socket])
+  }, [socket, profile])
 
   useEffect(() => {
 
