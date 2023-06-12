@@ -52,6 +52,9 @@ export const Home = () => {
 
   const printForAllPrinters = useCallback(async (text: string, printerToPrint?: BluetoothPrinter[]) => {
     setDeeplink(state => null)
+    printerToPrint = await getLocalPrinters()
+    console.log(printerToPrint, 'PRINTERS ======');
+    
     for await (const printer of printerToPrint ?? printers) {
       try {
         print(text, printer)
@@ -60,7 +63,7 @@ export const Home = () => {
         printer.error = true
         console.error(error);
       } finally {
-        await setLocalPrinters(printers)
+        // await setLocalPrinters(printers)
         console.log(printers);
         setPrinters(() => [...printers])
       }
@@ -133,9 +136,9 @@ export const Home = () => {
     const intervalId = BackgroundTimer.setInterval(() => {
       // console.log(printers, text);
       if (text) {
-        text = null
         displayNotification()
         printForAllPrinters(text)
+        text = null
       }
     }, 1000)
   }, [])

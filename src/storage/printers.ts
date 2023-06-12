@@ -5,6 +5,7 @@ import { DeviceEventEmitter } from "react-native";
 
 export const setLocalPrinters = async (printers: BluetoothPrinter[]) => {
   try {
+    console.log('SETANDO PRINTERS LOCAL')
     await AsyncStorage.setItem(PRINTERS, JSON.stringify(printers))
     DeviceEventEmitter.emit('printers:updated', printers)
   } catch (error) {
