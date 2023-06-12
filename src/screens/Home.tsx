@@ -54,7 +54,7 @@ export const Home = () => {
     setDeeplink(state => null)
     printerToPrint = await getLocalPrinters()
     console.log(printerToPrint, 'PRINTERS ======');
-    
+
     for await (const printer of printerToPrint ?? printers) {
       try {
         print(text, printer)
@@ -128,16 +128,21 @@ export const Home = () => {
     }
     let text: any = null
     DeviceEventEmitter.addListener('request:print', (request) => {
-      displayNotification()
       // printForAllPrinters(request.code)
-      text = request.code
+      // text = request.code
     })
-    
+
+    DeviceEventEmitter.addListener('request:deeplink', (data) => {
+      text = data
+    })
+
     const intervalId = BackgroundTimer.setInterval(() => {
       // console.log(printers, text);
       if (text) {
-        displayNotification()
         printForAllPrinters(text)
+          .then(() => {
+            displayNotification()
+          })
         text = null
       }
     }, 1000)
