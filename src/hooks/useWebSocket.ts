@@ -16,7 +16,7 @@ export const useWebSocket = (profile: any) => {
       console.log('%c[ws-connected]:', 'color: #0f0', `on ${event.target.url}`, ` - ${new Date().toTimeString()}`)
       const intervalId = BackgroundTimer.setInterval(() => {
         socket.send(JSON.stringify({ t: 8 }))
-      }, 25 * 1000)
+      }, 10 * 1000)
       setPongInterval(intervalId)
       socket.send(JSON.stringify({
         t: 1,
@@ -62,6 +62,7 @@ export const useWebSocket = (profile: any) => {
       socket.onclose = (event) => {
         console.log('%c[ws-disconnected]:', 'color: #f00', `code ${event.code} ${event.reason}`, ` - ${new Date().toTimeString()}`)
         BackgroundTimer.clearInterval(pongInterval!);
+        connect()
       }
 
     }

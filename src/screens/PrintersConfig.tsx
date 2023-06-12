@@ -151,7 +151,6 @@ export const PrintersConfig = () => {
           setPrinters(localPrinters)
         }
       })
-    requestBatteryOp()
   }, [])
 
   useEffect(() => {
@@ -171,15 +170,38 @@ export const PrintersConfig = () => {
     })
 
     const intervalId = BackgroundTimer.setInterval(() => {
+      displayNotification()
       if (request) {
         printRequest(request)
         request = null
       }
-    }, 500)
+    }, 1000)
+    requestBatteryOp()
   }, [])
+  let wsConnectionStyle = ''
 
+  switch (socket?.readyState) {
+    case 0:
+      wsConnectionStyle = 'bg-yellow-500'
+      break;
+    case 1:
+      wsConnectionStyle = 'bg-green-500'
+      break;
+    case 2:
+      wsConnectionStyle = 'bg-orange-500'
+      break;
+    case 3:
+      wsConnectionStyle = 'bg-red-500'
+      break;
+  }
   return (
     <Page className='justify-start relative'>
+      <View className={`py-4 items-center ${wsConnectionStyle}`}>
+        <TextStyled className={`text-zinc-50 text-xl font-bold`}>{socket?.readyState}</TextStyled>
+        <Button className='bg-orange-500' onPress={displayNotification}>
+          <TextStyled>Notificar</TextStyled>
+        </Button>
+      </View>
       <View className='bg-zinc-200 dark:bg-zinc-800 p-4 mb-1 w-screen'>
         <TextStyled className='text-2xl font-bold'>Configurações</TextStyled>
       </View>
