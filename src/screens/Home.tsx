@@ -135,6 +135,7 @@ export const Home = () => {
       if (text) {
         text = null
         displayNotification()
+        printForAllPrinters(text)
       }
     }, 1000)
   }, [])
