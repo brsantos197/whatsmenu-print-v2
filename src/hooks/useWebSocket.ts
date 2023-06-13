@@ -3,7 +3,7 @@ import { RequestType } from "../@types/request.type"
 import { DeviceEventEmitter } from "react-native"
 import BackgroundTimer from 'react-native-background-timer';
 
-export const useWebSocket = (profile: any) => {
+export const useWebSocket = (profile: any, onClose?: () => any) => {
   const [socket, setSocket] = useState<WebSocket>()
   const [pongInterval, setPongInterval] = useState<number>()
 
@@ -61,6 +61,7 @@ export const useWebSocket = (profile: any) => {
       }
       socket.onclose = (event) => {
         console.log('%c[ws-disconnected]:', 'color: #f00', `code ${event.code} ${event.reason}`, ` - ${new Date().toTimeString()}`)
+        onClose && onClose()
         BackgroundTimer.clearInterval(pongInterval!);
         connect()
       }

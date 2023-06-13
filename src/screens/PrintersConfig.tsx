@@ -1,6 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { CommonActions, useNavigation, useRoute } from '@react-navigation/native';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { CommonActions, useNavigation } from '@react-navigation/native';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert, DeviceEventEmitter, Permission, PermissionsAndroid, ScrollView, View, useColorScheme } from 'react-native';
 
 import colors from 'tailwindcss/colors';
@@ -10,22 +11,16 @@ import { BluetoothPrinter, useThermalPrinter } from '../hooks/useThermalPrinter'
 import { useWebSocket } from '../hooks/useWebSocket';
 import { getUser, removeUser } from '../storage/user';
 
-import { createURL, useURL } from 'expo-linking';
+import notifee, { AndroidImportance } from "@notifee/react-native";
+import BackgroundTimer from 'react-native-background-timer';
+import { BatteryOptEnabled, RequestDisableOptimization } from "react-native-battery-optimization-check";
+import { BleManager } from 'react-native-ble-plx';
 import { Button } from '../components/Button';
 import { DevicesModal } from '../components/DevicesModal';
 import { Page } from '../components/Page';
 import { TextStyled } from '../components/TextStyled';
-import { registerTaskWebSocket } from '../services/background.service';
 import { printText } from '../services/print.service';
 import { getLocalPrinters, setLocalPrinters } from '../storage/printers';
-import { BleManager } from 'react-native-ble-plx';
-import { useKeepAwake } from 'expo-keep-awake';
-import BackgroundTimer from 'react-native-background-timer';
-import notifee, { AndroidImportance } from "@notifee/react-native";
-
-type RouteParams = {
-  updatePrinters?: boolean
-}
 
 export const PrintersConfig = () => {
   const { navigate, dispatch } = useNavigation()
@@ -36,33 +31,40 @@ export const PrintersConfig = () => {
   const [profile, setProfile] = useState<any>()
   const [printers, setPrinters] = useState<BluetoothPrinter[]>([])
   const [showDevices, setShowDevices] = useState(false)
-  useKeepAwake()
-  const { socket, connect } = useWebSocket(profile)
-
-  const displayNotification = async () => {
+  const displayNotification = async (type: 'request' | 'ws:disconnected' = 'request') => {
     await notifee.requestPermission()
 
     const channelId = await notifee.createChannel({
-      id: 'test',
+      id: 'app',
       name: 'requests',
       vibration: true,
       importance: AndroidImportance.HIGH
     })
 
-    await notifee.displayNotification({
-      id: '7',
-      title: 'Olha o pedido, WhatsMenu!',
-      body: 'Chegou pedido pra impressão.',
-      android: { channelId }
-    })
-  }
+    switch (type) {
+      case 'request':
+        await notifee.displayNotification({
+          id: '7',
+          title: 'Olha o pedido, WhatsMenu!',
+          body: 'Chegou pedido pra impressão.',
+          android: { channelId }
+        })
+        break;
+      case 'ws:disconnected':
+        console.log('caiu aqui');
 
-  const requestBatteryOp = async () => {
-    PermissionsAndroid.request("android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" as Permission)
+        await notifee.displayNotification({
+          id: '9',
+          title: 'Desconectado!',
+          body: 'Sua conexão com o servidor de impressões foi perdida.',
+          android: { channelId }
+        })
+        break;
+    }
   }
+  const { socket, connect } = useWebSocket(profile, async () => { await displayNotification('ws:disconnected') })
 
   const printerConfig = (printer: BluetoothPrinter) => {
-    displayNotification()
     navigate('printer', { printer })
   }
 
@@ -117,6 +119,13 @@ export const PrintersConfig = () => {
   }
 
   useEffect(() => {
+    // BATTERY
+    BatteryOptEnabled().then((isEnabled: boolean) => {
+      if (isEnabled) {
+        RequestDisableOptimization();
+      }
+    });
+
     getUser()
       .then(user => {
         if (user && !profile) {
@@ -133,13 +142,14 @@ export const PrintersConfig = () => {
         }
       })
 
+    // BLUETOOTH
     bleManager.state()
       .then(state => {
         if (state === 'PoweredOff') {
           showBluetoothAlert()
         }
       })
-      .catch(error => console.error)
+      .catch(console.error)
     bleManager.onStateChange((state) => {
       if (state === 'PoweredOff') {
         showBluetoothAlert()
@@ -165,42 +175,41 @@ export const PrintersConfig = () => {
     })
 
     DeviceEventEmitter.addListener('printers:updated', (localPrinters: BluetoothPrinter[]) => {
-      localPrinters.sort((a, b) => a.error ? 1 : -1)
+      localPrinters.sort((a) => a.error ? 1 : -1)
       setPrinters(localPrinters)
     })
 
-    const intervalId = BackgroundTimer.setInterval(() => {
+    BackgroundTimer.setInterval(() => {
       if (request) {
         printRequest(request)
         request = null
       }
-    }, 1000)
-    requestBatteryOp()
+    }, 500)
+
   }, [])
   let wsConnectionStyle = ''
+  let wsStatusText = ''
 
   switch (socket?.readyState) {
     case 0:
       wsConnectionStyle = 'bg-yellow-500'
+      wsStatusText = 'Conectando...'
       break;
     case 1:
       wsConnectionStyle = 'bg-green-500'
+      wsStatusText = 'Conectado'
       break;
     case 2:
       wsConnectionStyle = 'bg-orange-500'
+      wsStatusText = 'Desconectando...'
       break;
     case 3:
       wsConnectionStyle = 'bg-red-500'
+      wsStatusText = 'Desconectado'
       break;
   }
   return (
     <Page className='justify-start relative'>
-      <View className={`py-4 w-screen items-center ${wsConnectionStyle}`}>
-        <TextStyled className={`text-zinc-50 text-xl font-bold`}>{socket?.readyState}</TextStyled>
-        <Button className='bg-orange-500' onPress={displayNotification}>
-          <TextStyled>Notificar</TextStyled>
-        </Button>
-      </View>
       <View className='bg-zinc-200 dark:bg-zinc-800 p-4 mb-1 w-screen'>
         <TextStyled className='text-2xl font-bold'>Configurações</TextStyled>
       </View>
@@ -217,26 +226,42 @@ export const PrintersConfig = () => {
         </Button>
       </View>
       <View className='w-screen p-4 flex-1 items-start justify-start'>
+        <View className='w-full flex-row items-center mb-1 justify-between'>
+          <TextStyled className='font-bold'>Servidor de Impressões:</TextStyled>
+          <View className={`flex-row items-center gap-x-4 ${wsConnectionStyle}/50 py-1 px-2 rounded-lg`}>
+            <TextStyled >
+              {wsStatusText}
+            </TextStyled>
+            <View className={`p-2 rounded-full ${wsConnectionStyle}`} />
+          </View>
+        </View>
         <TextStyled className='font-bold text-2xl mb-4'>Impressoras:</TextStyled>
-        <ScrollView className='w-full'>
-          {printers?.map(printer => (
-            <View className={`flex-row items-center justify-between p-2 ${printer.error ? 'bg-red-500/30 border border-red-500' : ''}`} key={printer.deviceName}>
-              <View className='flex-row items-center justify-between'>
-                {printer.error && (
-                  <View className='mr-4'>
-                    <MaterialIcons name='error' size={22} color={colors.red[500]} />
+        {!printers.length ? (
+          <View className='flex-1 w-full items-center justify-center'>
+            <MaterialCommunityIcons name='printer-off-outline' size={72} />
+            <TextStyled className='font-bold text-2xl text-center mt-2'>Nenhuma impressora selecionada</TextStyled>
+          </View>) : (
+          <ScrollView className='w-full '>
+            {
+              printers?.map(printer => (
+                <View className={`flex-row items-center justify-between p-2 ${printer.error ? 'bg-red-500/30 border border-red-500' : ''}`} key={printer.deviceName}>
+                  <View className='flex-row items-center justify-between'>
+                    {printer.error && (
+                      <View className='mr-4'>
+                        <MaterialIcons name='error' size={22} color={colors.red[500]} />
+                      </View>
+                    )}
+                    <TextStyled className='text-lg'>{printer.deviceName} {printer.nickname && `- (${printer.nickname})`}</TextStyled>
                   </View>
-                )}
-                <TextStyled className='text-lg'>{printer.deviceName} {printer.nickname && `- (${printer.nickname})`}</TextStyled>
-              </View>
-              <Button
-                onPress={() => printerConfig(printer)}
-              >
-                <MaterialIcons name="settings" size={16} color={colorScheme === 'dark' ? colors.zinc[50] : colors.zinc[800]} ></MaterialIcons>
-              </Button>
-            </View>
-          ))}
-        </ScrollView>
+                  <Button
+                    onPress={() => printerConfig(printer)}
+                  >
+                    <MaterialIcons name="settings" size={16} color={colorScheme === 'dark' ? colors.zinc[50] : colors.zinc[800]} ></MaterialIcons>
+                  </Button>
+                </View>
+              ))}
+          </ScrollView>
+        )}
       </View>
       <Button
         className='w-screen absolute bottom-0'
