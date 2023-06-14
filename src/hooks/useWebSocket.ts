@@ -34,23 +34,26 @@ export const useWebSocket = (profile: any, onClose?: () => any) => {
           case 7: {
             const data = JSON.parse(event.data)
             if (data.d.event.includes('print')) {
-              const requests: RequestType[] = data.d.data.requests
-              const colors = {
-                D: '#2185D0',
-                T: '#A5673F',
-                P: '#F57151'
-              }
-              requests.sort((a, b) => {
-                if (a.code > b.code) {
-                  return 1
-                } else {
-                  return -1
-                }
-              }).forEach(request => {
-                DeviceEventEmitter.emit('request:print', request)
-                console.log(`%c[ws-request-${request.type}]:`, `color: ${colors[request.type]}`, `code ${request.code}`, `${request.tentatives > 0 ? request.tentatives + ' tentaiva reenvio' : ''}`, ` - ${new Date().toTimeString()}`)
-              });
+              DeviceEventEmitter.emit('request:directPrint', data.d.data)
             }
+            // if (data.d.event.includes('print')) {
+            //   const requests: RequestType[] = data.d.data.requests
+            //   const colors = {
+            //     D: '#2185D0',
+            //     T: '#A5673F',
+            //     P: '#F57151'
+            //   }
+            //   requests.sort((a, b) => {
+            //     if (a.code > b.code) {
+            //       return 1
+            //     } else {
+            //       return -1
+            //     }
+            //   }).forEach(request => {
+            //     DeviceEventEmitter.emit('request:print', request)
+            //     console.log(`%c[ws-request-${request.type}]:`, `color: ${colors[request.type]}`, `code ${request.code}`, `${request.tentatives > 0 ? request.tentatives + ' tentaiva reenvio' : ''}`, ` - ${new Date().toTimeString()}`)
+            //   });
+            // }
             break;
           }
           case 9: {
@@ -63,7 +66,9 @@ export const useWebSocket = (profile: any, onClose?: () => any) => {
         console.log('%c[ws-disconnected]:', 'color: #f00', `code ${event.code} ${event.reason}`, ` - ${new Date().toTimeString()}`)
         onClose && onClose()
         BackgroundTimer.clearInterval(pongInterval!);
-        connect()
+        if (event.reason !== 'logoff') {
+          connect()
+        }
       }
 
     }

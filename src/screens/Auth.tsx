@@ -27,7 +27,7 @@ export const Auth = () => {
       await setUser(data.user)
       const user = await getUser()
       if (user) {
-        navigate('printers')
+        navigate('printers', { user })
       }
     } catch (error) {
       console.log(error);
@@ -38,7 +38,7 @@ export const Auth = () => {
     getUser()
       .then(user => {
         if (user) {
-          navigate('printers')
+          navigate('printers', { user })
           setLoaded(true)
         }
       })

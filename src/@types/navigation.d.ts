@@ -7,7 +7,7 @@ export declare global {
       printer: {
         printer: BluetoothPrinter
       };
-      printers: undefined
+      printers: { user?: any }
     }
   }
 }

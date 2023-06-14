@@ -1,15 +1,15 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { CommonActions, useNavigation } from '@react-navigation/native';
+import { CommonActions, useNavigation, useRoute } from '@react-navigation/native';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, DeviceEventEmitter, Permission, PermissionsAndroid, ScrollView, View, useColorScheme } from 'react-native';
+import { Alert, DeviceEventEmitter, Permission, PermissionsAndroid, ScrollView, TouchableOpacity, View, useColorScheme } from 'react-native';
 
 import colors from 'tailwindcss/colors';
 
 import { RequestType } from '../@types/request.type';
 import { BluetoothPrinter, useThermalPrinter } from '../hooks/useThermalPrinter';
 import { useWebSocket } from '../hooks/useWebSocket';
-import { getUser, removeUser } from '../storage/user';
+import { removeUser } from '../storage/user';
 
 import notifee, { AndroidImportance } from "@notifee/react-native";
 import BackgroundTimer from 'react-native-background-timer';
@@ -24,6 +24,8 @@ import { getLocalPrinters, setLocalPrinters } from '../storage/printers';
 
 export const PrintersConfig = () => {
   const { navigate, dispatch } = useNavigation()
+  const { params } = useRoute()
+  const { user } = params as { user: any }
   const { devices, print, getDevices } = useThermalPrinter()
   const colorScheme = useColorScheme()
   const bleManager = useMemo(() => new BleManager(), []);
@@ -31,6 +33,10 @@ export const PrintersConfig = () => {
   const [profile, setProfile] = useState<any>()
   const [printers, setPrinters] = useState<BluetoothPrinter[]>([])
   const [showDevices, setShowDevices] = useState(false)
+  const [wsStatus, setWsStatus] = useState<{
+    statusText: 'Conectando...' | 'Conectado' | 'Desconectando...' | 'Desconectado',
+    color: string,
+  }>({ statusText: 'Conectando...', color: colors.yellow[500] })
   const displayNotification = async (type: 'request' | 'ws:disconnected' = 'request') => {
     await notifee.requestPermission()
 
@@ -51,8 +57,6 @@ export const PrintersConfig = () => {
         })
         break;
       case 'ws:disconnected':
-        console.log('caiu aqui');
-
         await notifee.displayNotification({
           id: '9',
           title: 'Desconectado!',
@@ -115,8 +119,26 @@ export const PrintersConfig = () => {
   // AUTH
   const handleLogOff = async () => {
     await removeUser()
+    socket?.close(1000, 'logoff')
+    setProfile(null)
     navigate('auth')
   }
+
+  useEffect(() => {
+    if (user && !profile) {
+      setProfile(user.profile)
+      connect()
+      dispatch(state => {
+        const routes = state.routes.filter(r => r.name !== 'auth');
+
+        return CommonActions.reset({
+          ...state,
+          routes,
+          index: routes.length - 1,
+        });
+      })
+    }
+  }, [user])
 
   useEffect(() => {
     // BATTERY
@@ -125,22 +147,6 @@ export const PrintersConfig = () => {
         RequestDisableOptimization();
       }
     });
-
-    getUser()
-      .then(user => {
-        if (user && !profile) {
-          setProfile(user.profile)
-          dispatch(state => {
-            const routes = state.routes.filter(r => r.name !== 'auth');
-
-            return CommonActions.reset({
-              ...state,
-              routes,
-              index: routes.length - 1,
-            });
-          })
-        }
-      })
 
     // BLUETOOTH
     bleManager.state()
@@ -165,13 +171,19 @@ export const PrintersConfig = () => {
 
   useEffect(() => {
     DeviceEventEmitter.removeAllListeners('request:print')
-    if (!socket) {
-      connect()
-    }
+    DeviceEventEmitter.removeAllListeners('request:directPrint')
+    // if (!socket) {
+    //   connect()
+    // }
     let request: RequestType | null = null
+    let requestText: string | null = null
     DeviceEventEmitter.addListener('request:print', (requestData) => {
       displayNotification()
       request = requestData
+    })
+    DeviceEventEmitter.addListener('request:directPrint', (text: string) => {
+      displayNotification()
+      requestText = text
     })
 
     DeviceEventEmitter.addListener('printers:updated', (localPrinters: BluetoothPrinter[]) => {
@@ -184,30 +196,35 @@ export const PrintersConfig = () => {
         printRequest(request)
         request = null
       }
+      if (requestText) {
+        
+        printForAllPrinters(requestText)
+        requestText = null
+      }
     }, 500)
 
   }, [])
-  let wsConnectionStyle = ''
-  let wsStatusText = ''
 
-  switch (socket?.readyState) {
-    case 0:
-      wsConnectionStyle = 'bg-yellow-500'
-      wsStatusText = 'Conectando...'
-      break;
-    case 1:
-      wsConnectionStyle = 'bg-green-500'
-      wsStatusText = 'Conectado'
-      break;
-    case 2:
-      wsConnectionStyle = 'bg-orange-500'
-      wsStatusText = 'Desconectando...'
-      break;
-    case 3:
-      wsConnectionStyle = 'bg-red-500'
-      wsStatusText = 'Desconectado'
-      break;
-  }
+  useEffect(() => {
+    // console.log(socket?.readyState, "SOCKET STATUS");
+    switch (socket?.readyState) {
+      case 0:
+        setWsStatus({ statusText: 'Conectando...', color: colors.yellow[500] })
+        break;
+      case 1:
+        setWsStatus({ statusText: 'Conectado', color: colors.green[500] })
+        break;
+      case 2:
+        setWsStatus({ statusText: 'Desconectando...', color: colors.orange[500] })
+        break;
+      case 3:
+        setWsStatus({ statusText: 'Desconectado', color: colors.red[500] })
+        break;
+    }
+    
+  }, [socket?.readyState])
+  console.log(wsStatus.color, "SOCKET STATUS");
+
   return (
     <Page className='justify-start relative'>
       <View className='bg-zinc-200 dark:bg-zinc-800 p-4 mb-1 w-screen'>
@@ -228,17 +245,24 @@ export const PrintersConfig = () => {
       <View className='w-screen p-4 flex-1 items-start justify-start'>
         <View className='w-full flex-row items-center mb-1 justify-between'>
           <TextStyled className='font-bold'>Servidor de Impressões:</TextStyled>
-          <View className={`flex-row items-center gap-x-4 ${wsConnectionStyle}/50 py-1 px-2 rounded-lg`}>
-            <TextStyled >
-              {wsStatusText}
-            </TextStyled>
-            <View className={`p-2 rounded-full ${wsConnectionStyle}`} />
+          <View className='flex-row items-center gap-x-2'>
+            <View className={`flex-row items-center gap-x-4 py-1 px-2 rounded-lg`} style={{ backgroundColor: `${wsStatus.color}66` }}>
+              <TextStyled>
+                {wsStatus.statusText}
+              </TextStyled>
+              <View className={`p-2 rounded-full`} style={{ backgroundColor: wsStatus.color }} />
+            </View>
+            { wsStatus.statusText === 'Desconectado' && (
+              <TouchableOpacity className='px-2' onPress={() => { connect() }}>
+                <MaterialCommunityIcons name='reload' size={20} color={colorScheme === 'dark' ? colors.zinc[50] : colors.zinc[950]} onPress={connect} /> 
+              </TouchableOpacity>
+            )}
           </View>
         </View>
         <TextStyled className='font-bold text-2xl mb-4'>Impressoras:</TextStyled>
         {!printers.length ? (
           <View className='flex-1 w-full items-center justify-center'>
-            <MaterialCommunityIcons name='printer-off-outline' size={72} />
+            <MaterialCommunityIcons name='printer-off-outline' size={72} color={colorScheme === 'dark' ? colors.zinc[50] : colors.zinc[950]} />
             <TextStyled className='font-bold text-2xl text-center mt-2'>Nenhuma impressora selecionada</TextStyled>
           </View>) : (
           <ScrollView className='w-full '>
