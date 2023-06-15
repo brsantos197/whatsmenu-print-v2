@@ -4,7 +4,7 @@ import { CommonActions, useNavigation, useRoute } from '@react-navigation/native
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, DeviceEventEmitter, ScrollView, TouchableOpacity, View, useColorScheme } from 'react-native';
 
-import { Audio } from 'expo-av';
+import { Audio, InterruptionModeAndroid, InterruptionModeIOS } from 'expo-av';
 import colors from 'tailwindcss/colors';
 
 import { BluetoothPrinter, useThermalPrinter } from '../hooks/useThermalPrinter';
@@ -37,6 +37,23 @@ export const PrintersConfig = () => {
     statusText: 'Conectando...' | 'Conectado' | 'Desconectando...' | 'Desconectado',
     color: string,
   }>({ statusText: 'Conectando...', color: colors.yellow[500] })
+
+  const playSound = async () => {
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      staysActiveInBackground: true,
+      interruptionModeIOS: InterruptionModeIOS.DuckOthers,
+      playsInSilentModeIOS: true,
+      shouldDuckAndroid: true,
+      interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
+      playThroughEarpieceAndroid: false
+    });
+
+    const { sound } = await Audio.Sound.createAsync(require('../../audio/pedido.mp3'))
+    setSound(sound)
+    await sound.playAsync()
+  }
+
   const displayNotification = async (type: 'request' | 'ws:disconnected' = 'request') => {
     await notifee.requestPermission()
 
@@ -172,16 +189,13 @@ export const PrintersConfig = () => {
   useEffect(() => {
     DeviceEventEmitter.removeAllListeners('request:print')
     DeviceEventEmitter.removeAllListeners('request:directPrint')
-    // if (!socket) {
-    //   connect()
-    // }
     let request: { 58: string, 80: string } | null = null
     DeviceEventEmitter.addListener('request:print', async (requestData) => {
       displayNotification()
-      const { sound } = await Audio.Sound.createAsync(require('../../audio/pedido.mp3'))
-      setSound(sound)
-      await sound.playAsync()
-      request = requestData
+      if (requestData[58] || requestData[80]) {
+        await playSound()
+        request = requestData
+      }
     })
     DeviceEventEmitter.addListener('request:directPrint', (requestData) => {
       request = requestData
@@ -223,9 +237,9 @@ export const PrintersConfig = () => {
   useEffect(() => {
     return sound
       ? () => {
-          console.log('Unloading Sound')
-          sound.unloadAsync()
-        }
+        console.log('Unloading Sound')
+        sound.unloadAsync()
+      }
       : undefined
   }, [sound])
 
@@ -236,7 +250,10 @@ export const PrintersConfig = () => {
       </View>
       <View className='bg-zinc-200 dark:bg-zinc-800 p-4 w-screen flex-row gap-x-2 mt-2 items-center justify-center'>
         <Button
-          onPress={async () => await printForAllPrinters({ 58: '[C]WHATSMENU IMPRESSORA\n\n', 80: '[C]WHATSMENU IMPRESSORA\n\n', test: true })}
+          onPress={async () => {
+            displayNotification()
+            // await printForAllPrinters({ 58: '[C]WHATSMENU IMPRESSORA\n\n', 80: '[C]WHATSMENU IMPRESSORA\n\n', test: true })
+          }}
         >
           <TextStyled>Testar Impressão</TextStyled>
         </Button>

@@ -91,7 +91,7 @@ export const useThermalPrinter = () => {
       const printerNbrCharactersPerLine = printerWidthMM === 58 ? 32 : 50
       const lineHeight = String.fromCharCode(...[0x1b, 0x33, lines * 7])
       const fontType = font === 'lg' ? String.fromCharCode(...[0x1d, 0x21, 0x01, 1]) : ''
-      const payload = data.test ? text : String(lineHeight + fontType + text.replaceAll('[underlineSeparator]', new Array(printerNbrCharactersPerLine).fill('-').join('')).normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
+      const payload = data.test ? text : String(lineHeight + fontType + text?.replaceAll('[underlineSeparator]', new Array(printerNbrCharactersPerLine).fill('-').join('')).normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
       
       let copiesCount = 0
       do {
