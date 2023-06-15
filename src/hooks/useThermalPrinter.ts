@@ -79,23 +79,21 @@ export const useThermalPrinter = () => {
     }
   };
 
-  const print = async (text: any, printer: BluetoothPrinter) => {
+  const print = async (data: any, printer: BluetoothPrinter) => {
     try {
       const { bold, copies, font, printerWidthMM, macAddress, lines } = printer           
-
+      let text = data[printerWidthMM]
+      console.log(text);
       // BOLD
       if (bold) {
         text = `<b>${text}</b>`
       }
-      
-      // if (font === 'lg') {
-      //   text = `<font size='big'>${text}</font>`
-      // }
 
       const printerNbrCharactersPerLine = printerWidthMM === 58 ? 32 : 50
       const lineHeight = String.fromCharCode(...[0x1b, 0x33, lines * 7])
+      const fontType = font === 'lg' ? String.fromCharCode(...[0x1d, 0x21, 0x01, 1]) : ''
+      const payload = String(lineHeight + fontType + text.replaceAll('[underlineSeparator]', new Array(printerNbrCharactersPerLine).fill('-').join('')).normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
       
-      const payload = String(lineHeight + text.normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
       let copiesCount = 0
       do {
         await ThermalPrinterModule.printBluetooth({

@@ -72,11 +72,11 @@ export const PrintersConfig = () => {
     navigate('printer', { printer })
   }
 
-  const printForAllPrinters = async (text: string) => {
+  const printForAllPrinters = async (data: any) => {
     const printers = await getLocalPrinters()
     for (const printer of printers) {
       try {
-        await print(text, printer)
+        await print(data, printer)
         printer.error = false
       } catch (error) {
         printer.error = true
@@ -175,15 +175,14 @@ export const PrintersConfig = () => {
     // if (!socket) {
     //   connect()
     // }
-    let request: RequestType | null = null
-    let requestText: string | null = null
+    let request: { 58: string, 80: string } | null = null
     DeviceEventEmitter.addListener('request:print', (requestData) => {
       displayNotification()
       request = requestData
     })
-    DeviceEventEmitter.addListener('request:directPrint', (text: string) => {
+    DeviceEventEmitter.addListener('request:directPrint', (requestData) => {
       displayNotification()
-      requestText = text
+      request = requestData
     })
 
     DeviceEventEmitter.addListener('printers:updated', (localPrinters: BluetoothPrinter[]) => {
@@ -192,14 +191,13 @@ export const PrintersConfig = () => {
     })
 
     BackgroundTimer.setInterval(() => {
+      // if (request) {
+      //   printRequest(request)
+      //   request = null
+      // }
       if (request) {
-        printRequest(request)
+        printForAllPrinters(request)
         request = null
-      }
-      if (requestText) {
-        
-        printForAllPrinters(requestText)
-        requestText = null
       }
     }, 500)
 
@@ -232,7 +230,7 @@ export const PrintersConfig = () => {
       </View>
       <View className='bg-zinc-200 dark:bg-zinc-800 p-4 w-screen flex-row gap-x-2 mt-2 items-center justify-center'>
         <Button
-          onPress={async () => await printForAllPrinters('[CONTENT][C]<b>WHATSMENU IMPRESSORA</b>\n\n')}
+          onPress={async () => await printForAllPrinters('[C]<b>WHATSMENU IMPRESSORA</b>\n\n')}
         >
           <TextStyled>Testar Impressão</TextStyled>
         </Button>
