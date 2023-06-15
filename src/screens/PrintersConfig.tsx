@@ -71,7 +71,7 @@ export const PrintersConfig = () => {
   const printerConfig = (printer: BluetoothPrinter) => {
     navigate('printer', { printer })
   }
-
+  
   const printForAllPrinters = async (data: any) => {
     const printers = await getLocalPrinters()
     for (const printer of printers) {
@@ -87,10 +87,10 @@ export const PrintersConfig = () => {
     }
   }
 
-  const printRequest = async (request: RequestType) => {
-    const text = await printText(request)
-    printForAllPrinters(text)
-  }
+  // const printRequest = async (request: RequestType) => {
+  //   const text = await printText(request)
+  //   printForAllPrinters(text)
+  // }
 
   const showBluetoothAlert = () => {
     Alert.alert(
@@ -181,7 +181,6 @@ export const PrintersConfig = () => {
       request = requestData
     })
     DeviceEventEmitter.addListener('request:directPrint', (requestData) => {
-      displayNotification()
       request = requestData
     })
 
@@ -191,10 +190,6 @@ export const PrintersConfig = () => {
     })
 
     BackgroundTimer.setInterval(() => {
-      // if (request) {
-      //   printRequest(request)
-      //   request = null
-      // }
       if (request) {
         printForAllPrinters(request)
         request = null
@@ -221,7 +216,6 @@ export const PrintersConfig = () => {
     }
     
   }, [socket?.readyState])
-  console.log(wsStatus.color, "SOCKET STATUS");
 
   return (
     <Page className='justify-start relative'>
@@ -230,7 +224,7 @@ export const PrintersConfig = () => {
       </View>
       <View className='bg-zinc-200 dark:bg-zinc-800 p-4 w-screen flex-row gap-x-2 mt-2 items-center justify-center'>
         <Button
-          onPress={async () => await printForAllPrinters('[C]<b>WHATSMENU IMPRESSORA</b>\n\n')}
+          onPress={async () => await printForAllPrinters({ 58: '[C]WHATSMENU IMPRESSORA\n\n', 80: '[C]WHATSMENU IMPRESSORA\n\n', test: true })}
         >
           <TextStyled>Testar Impressão</TextStyled>
         </Button>

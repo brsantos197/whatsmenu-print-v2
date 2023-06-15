@@ -49,7 +49,7 @@ export const Auth = () => {
     <Page className='gap-y-36'>
       <TextStyled className='mt-40 text-green-500 text-5xl font-bold'>WhatsMenu</TextStyled>
       <View className='w-screen px-10'>
-        <Input placeholder='Email' value={email} onChangeText={(text) => setEmail(text)} />
+        <Input placeholder='Email' autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={(text) => setEmail(text)} />
         <Input placeholder='Senha' secureTextEntry value={password} onChangeText={(text) => setPassword(text)} />
         <Button
           onPress={() => { handleAuth() }}

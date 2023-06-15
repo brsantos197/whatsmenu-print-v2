@@ -2,10 +2,13 @@ import { useEffect, useState } from "react"
 import { RequestType } from "../@types/request.type"
 import { DeviceEventEmitter } from "react-native"
 import BackgroundTimer from 'react-native-background-timer';
+import { Audio } from 'expo-av';
 
 export const useWebSocket = (profile: any, onClose?: () => any) => {
   const [socket, setSocket] = useState<WebSocket>()
   const [pongInterval, setPongInterval] = useState<number>()
+  const [status, setStatus] = useState(socket?.readyState ?? 0)
+  const [sound, setSound] = useState<Audio.Sound>()
 
   const connect = () => {
     setSocket(new WebSocket('wss://rt2.whatsmenu.com.br/adonis-ws'))
@@ -24,8 +27,9 @@ export const useWebSocket = (profile: any, onClose?: () => any) => {
           topic: `print:${profile?.slug}`
         }
       }))
-      socket.onmessage = (event) => {
+      socket.onmessage = async (event) => {
         const data = JSON.parse(event.data)
+        console.log(data);
         switch (data.t) {
           case 3: {
             console.log('%c[ws-subscribe]:', 'color: #ff0', `initiating subscription for ${data.d.topic} topic with server`, ` - ${new Date().toTimeString()}`)
@@ -34,6 +38,12 @@ export const useWebSocket = (profile: any, onClose?: () => any) => {
           case 7: {
             const data = JSON.parse(event.data)
             if (data.d.event.includes('print')) {
+              const { sound } = await Audio.Sound.createAsync(require('../../audio/pedido.mp3'))
+              setSound(sound)
+              await sound.playAsync()
+              DeviceEventEmitter.emit('request:print', data.d.data)
+            }
+            if (data.d.event.includes('directPrint')) {
               DeviceEventEmitter.emit('request:directPrint', data.d.data)
             }
             // if (data.d.event.includes('print')) {
@@ -64,9 +74,9 @@ export const useWebSocket = (profile: any, onClose?: () => any) => {
       }
       socket.onclose = (event) => {
         console.log('%c[ws-disconnected]:', 'color: #f00', `code ${event.code} ${event.reason}`, ` - ${new Date().toTimeString()}`)
-        onClose && onClose()
         BackgroundTimer.clearInterval(pongInterval!);
         if (event.reason !== 'logoff') {
+          onClose && onClose()
           connect()
         }
       }
@@ -87,11 +97,24 @@ export const useWebSocket = (profile: any, onClose?: () => any) => {
   }, [socket, profile])
 
   useEffect(() => {
+    setStatus(state => socket?.readyState ?? 0)
+    setTimeout(() => {
+      setStatus(state => socket?.readyState ?? 0)
+    }, 1000 * 10);
+  }, [socket?.readyState])
 
-  }, [])
+  useEffect(() => {
+    return sound
+      ? () => {
+          console.log('Unloading Sound')
+          sound.unloadAsync()
+        }
+      : undefined
+  }, [sound])
 
   return {
     socket,
-    connect
+    connect,
+    status
   }
 }

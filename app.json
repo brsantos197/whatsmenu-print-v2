@@ -46,7 +46,8 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#FFF"
+        "backgroundColor": "#FFF",
+        "resizeMode": "contain"
       },
       "permissions": [
         "android.permission.BLUETOOTH",
