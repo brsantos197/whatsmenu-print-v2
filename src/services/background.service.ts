@@ -4,14 +4,12 @@ import { DeviceEventEmitter } from 'react-native';
 
 const TASK_NAME = 'PRINT_WEBSOCKETS'
 TaskManager.defineTask(TASK_NAME, async () => {
-  console.log('BACKGROUDMODE')
   DeviceEventEmitter.emit('background-pong', new Date().toISOString())
   // Be sure to return the successful result type!
   return BackgroundFetch.BackgroundFetchResult.NewData;
 })
 
 const registerTaskWebSocket = () => {
-  console.log('REGISTROU')
   return BackgroundFetch.registerTaskAsync(TASK_NAME, {
     minimumInterval: 1,
     stopOnTerminate: false,

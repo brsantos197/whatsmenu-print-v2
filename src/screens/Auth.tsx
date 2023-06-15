@@ -30,7 +30,7 @@ export const Auth = () => {
         navigate('printers', { user })
       }
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   }
 

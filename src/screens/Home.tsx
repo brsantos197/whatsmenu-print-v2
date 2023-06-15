@@ -53,8 +53,6 @@ export const Home = () => {
   const printForAllPrinters = useCallback(async (text: string, printerToPrint?: BluetoothPrinter[]) => {
     setDeeplink(state => null)
     printerToPrint = await getLocalPrinters()
-    console.log(printerToPrint, 'PRINTERS ======');
-
     for await (const printer of printerToPrint ?? printers) {
       try {
         print(text, printer)

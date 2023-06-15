@@ -26,7 +26,6 @@ export const useWebSocket = (profile: any, onClose?: () => any) => {
       }))
       socket.onmessage = async (event) => {
         const data = JSON.parse(event.data)
-        console.log(data);
         switch (data.t) {
           case 3: {
             console.log('%c[ws-subscribe]:', 'color: #ff0', `initiating subscription for ${data.d.topic} topic with server`, ` - ${new Date().toTimeString()}`)

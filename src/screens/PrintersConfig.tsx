@@ -215,7 +215,6 @@ export const PrintersConfig = () => {
   }, [])
 
   useEffect(() => {
-    // console.log(socket?.readyState, "SOCKET STATUS");
     switch (socket?.readyState) {
       case 0:
         setWsStatus({ statusText: 'Conectando...', color: colors.yellow[500] })
@@ -236,7 +235,6 @@ export const PrintersConfig = () => {
   useEffect(() => {
     return sound
       ? () => {
-        console.log('Unloading Sound')
         sound.unloadAsync()
       }
       : undefined
