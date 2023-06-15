@@ -11,6 +11,7 @@ export type BluetoothDevice = {
 }
 
 export type BluetoothPrinter = BluetoothDevice & {
+  id: number;
   nickname?: string;
   lines: number;
   font: 'lg' | 'sm'

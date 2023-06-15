@@ -29,7 +29,7 @@ export const DevicesModal = ({ devices, printers, onConfirm, show, cancel, confi
       if (state.some(printer => printer.macAddress === device.macAddress)) {
         return state.filter(printer => printer.macAddress !== device.macAddress)
       } else {
-        return [...state, { ...device, bold: false, copies: 1, lines: 1, font: 'sm', printerWidthMM: 58 }]
+        return [...state, { ...device, id: state.length, bold: false, copies: 1, lines: 1, font: 'sm', printerWidthMM: 58 }]
       }
     })
   }

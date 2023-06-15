@@ -202,8 +202,7 @@ export const PrintersConfig = () => {
     })
 
     DeviceEventEmitter.addListener('printers:updated', (localPrinters: BluetoothPrinter[]) => {
-      localPrinters.sort((a) => a.error ? 1 : -1)
-      setPrinters(localPrinters)
+      setPrinters([...localPrinters])
     })
 
     BackgroundTimer.setInterval(() => {
@@ -251,8 +250,7 @@ export const PrintersConfig = () => {
       <View className='bg-zinc-200 dark:bg-zinc-800 p-4 w-screen flex-row gap-x-2 mt-2 items-center justify-center'>
         <Button
           onPress={async () => {
-            displayNotification()
-            // await printForAllPrinters({ 58: '[C]WHATSMENU IMPRESSORA\n\n', 80: '[C]WHATSMENU IMPRESSORA\n\n', test: true })
+            await printForAllPrinters({ 58: '[C]WHATSMENU IMPRESSORA\n\n', 80: '[C]WHATSMENU IMPRESSORA\n\n', test: true })
           }}
         >
           <TextStyled>Testar Impressão</TextStyled>
