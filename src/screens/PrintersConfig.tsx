@@ -1,12 +1,12 @@
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { CommonActions, useNavigation, useRoute } from '@react-navigation/native';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, DeviceEventEmitter, Permission, PermissionsAndroid, ScrollView, TouchableOpacity, View, useColorScheme } from 'react-native';
+import { Alert, DeviceEventEmitter, ScrollView, TouchableOpacity, View, useColorScheme } from 'react-native';
 
+import { Audio } from 'expo-av';
 import colors from 'tailwindcss/colors';
 
-import { RequestType } from '../@types/request.type';
 import { BluetoothPrinter, useThermalPrinter } from '../hooks/useThermalPrinter';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { removeUser } from '../storage/user';
@@ -19,7 +19,6 @@ import { Button } from '../components/Button';
 import { DevicesModal } from '../components/DevicesModal';
 import { Page } from '../components/Page';
 import { TextStyled } from '../components/TextStyled';
-import { printText } from '../services/print.service';
 import { getLocalPrinters, setLocalPrinters } from '../storage/printers';
 
 export const PrintersConfig = () => {
@@ -33,6 +32,7 @@ export const PrintersConfig = () => {
   const [profile, setProfile] = useState<any>()
   const [printers, setPrinters] = useState<BluetoothPrinter[]>([])
   const [showDevices, setShowDevices] = useState(false)
+  const [sound, setSound] = useState<Audio.Sound>()
   const [wsStatus, setWsStatus] = useState<{
     statusText: 'Conectando...' | 'Conectado' | 'Desconectando...' | 'Desconectado',
     color: string,
@@ -71,7 +71,7 @@ export const PrintersConfig = () => {
   const printerConfig = (printer: BluetoothPrinter) => {
     navigate('printer', { printer })
   }
-  
+
   const printForAllPrinters = async (data: any) => {
     const printers = await getLocalPrinters()
     for (const printer of printers) {
@@ -176,8 +176,11 @@ export const PrintersConfig = () => {
     //   connect()
     // }
     let request: { 58: string, 80: string } | null = null
-    DeviceEventEmitter.addListener('request:print', (requestData) => {
+    DeviceEventEmitter.addListener('request:print', async (requestData) => {
       displayNotification()
+      const { sound } = await Audio.Sound.createAsync(require('../../audio/pedido.mp3'))
+      setSound(sound)
+      await sound.playAsync()
       request = requestData
     })
     DeviceEventEmitter.addListener('request:directPrint', (requestData) => {
@@ -214,8 +217,17 @@ export const PrintersConfig = () => {
         setWsStatus({ statusText: 'Desconectado', color: colors.red[500] })
         break;
     }
-    
+
   }, [socket?.readyState])
+
+  useEffect(() => {
+    return sound
+      ? () => {
+          console.log('Unloading Sound')
+          sound.unloadAsync()
+        }
+      : undefined
+  }, [sound])
 
   return (
     <Page className='justify-start relative'>
@@ -244,9 +256,9 @@ export const PrintersConfig = () => {
               </TextStyled>
               <View className={`p-2 rounded-full`} style={{ backgroundColor: wsStatus.color }} />
             </View>
-            { wsStatus.statusText === 'Desconectado' && (
+            {wsStatus.statusText === 'Desconectado' && (
               <TouchableOpacity className='px-2' onPress={() => { connect() }}>
-                <MaterialCommunityIcons name='reload' size={20} color={colorScheme === 'dark' ? colors.zinc[50] : colors.zinc[950]} onPress={connect} /> 
+                <MaterialCommunityIcons name='reload' size={20} color={colorScheme === 'dark' ? colors.zinc[50] : colors.zinc[950]} onPress={connect} />
               </TouchableOpacity>
             )}
           </View>
