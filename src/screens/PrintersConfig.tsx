@@ -295,7 +295,10 @@ export const PrintersConfig = () => {
           <TextStyled>Testar Impressão</TextStyled>
         </Button>
         <Button
-          onPress={() => setShowDevices(true)}
+          onPress={async () => {
+            await getDevices()
+            setShowDevices(true)
+          }}
         >
           <TextStyled>Selecionar Impressoras</TextStyled>
         </Button>
