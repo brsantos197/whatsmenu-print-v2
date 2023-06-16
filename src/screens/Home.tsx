@@ -50,8 +50,7 @@ export const Home = () => {
     const result = PermissionsAndroid.request("android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" as Permission)
   }
 
-  const printForAllPrinters = useCallback(async (text: string, printerToPrint?: BluetoothPrinter[]) => {
-    setDeeplink(state => null)
+  const printForAllPrinters = async (text: string, printerToPrint?: BluetoothPrinter[]) => {
     printerToPrint = await getLocalPrinters()
     for await (const printer of printerToPrint ?? printers) {
       try {
@@ -66,7 +65,7 @@ export const Home = () => {
         setPrinters(() => [...printers])
       }
     }
-  }, [printers, profile, redirectURL])
+  }
 
   const displayNotification = async () => {
     await notifee.requestPermission()
@@ -87,7 +86,7 @@ export const Home = () => {
   }
 
   useEffect(() => {
-    if (printers.length) {
+    if (printers?.length) {
       setLocalPrinters(printers)
     }
   }, [printers])
@@ -162,7 +161,7 @@ export const Home = () => {
             return CommonActions.reset({
               ...state,
               routes,
-              index: routes.length - 1,
+              index: routes?.length - 1,
             });
           })
         }

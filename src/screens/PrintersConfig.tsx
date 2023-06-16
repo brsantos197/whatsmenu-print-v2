@@ -11,7 +11,7 @@ import { BluetoothPrinter, useThermalPrinter } from '../hooks/useThermalPrinter'
 import { useWebSocket } from '../hooks/useWebSocket';
 import { removeUser } from '../storage/user';
 
-import notifee, { AndroidImportance } from "@notifee/react-native";
+import notifee, { AndroidImportance, EventType } from "@notifee/react-native";
 import BackgroundTimer from 'react-native-background-timer';
 import { BatteryOptEnabled, RequestDisableOptimization } from "react-native-battery-optimization-check";
 import { BleManager } from 'react-native-ble-plx';
@@ -54,7 +54,7 @@ export const PrintersConfig = () => {
     await sound.playAsync()
   }
 
-  const displayNotification = async (type: 'request' | 'ws:disconnected' = 'request') => {
+  const displayNotification = async (type: 'request' | 'ws:disconnected' | 'ws:connected' = 'request') => {
     await notifee.requestPermission()
 
     const channelId = await notifee.createChannel({
@@ -65,25 +65,36 @@ export const PrintersConfig = () => {
     })
 
     switch (type) {
-      case 'request':
+      case 'request': {
         await notifee.displayNotification({
-          id: '7',
+          id: 'request',
           title: 'Olha o pedido, WhatsMenu!',
           body: 'Chegou pedido pra impressão.',
           android: { channelId }
         })
         break;
-      case 'ws:disconnected':
+      }
+      case 'ws:disconnected': {
         await notifee.displayNotification({
-          id: '9',
+          id: 'disconnected',
           title: 'Desconectado!',
           body: 'Sua conexão com o servidor de impressões foi perdida.',
           android: { channelId }
         })
         break;
+      }
+      case 'ws:connected': {
+        await notifee.displayNotification({
+          id: 'connected',
+          title: 'Conectado!',
+          body: 'Conectado com sucesso com o servidor de impressões.',
+          android: { channelId }
+        })
+        break;
+      }
     }
   }
-  const { socket, connect } = useWebSocket(profile, async () => { await displayNotification('ws:disconnected') })
+  const { socket, connect } = useWebSocket(profile, { onClose: async () => { await displayNotification('ws:disconnected') }, onConnected: async () => { await displayNotification('ws:connected') } })
 
   const printerConfig = (printer: BluetoothPrinter) => {
     navigate('printer', { printer })
@@ -91,15 +102,17 @@ export const PrintersConfig = () => {
 
   const printForAllPrinters = async (data: any) => {
     const printers = await getLocalPrinters()
-    for (const printer of printers) {
-      try {
-        await print(data, printer)
-        printer.error = false
-      } catch (error) {
-        printer.error = true
-        console.error(error);
-      } finally {
-        await setLocalPrinters(printers)
+    if (printers.length) {
+      for (const printer of printers) {
+        try {
+          await print(data, printer)
+          printer.error = false
+        } catch (error) {
+          printer.error = true
+          console.error(error);
+        } finally {
+          await setLocalPrinters(printers)
+        }
       }
     }
   }
@@ -151,7 +164,7 @@ export const PrintersConfig = () => {
         return CommonActions.reset({
           ...state,
           routes,
-          index: routes.length - 1,
+          index: routes?.length - 1,
         });
       })
     }
@@ -232,6 +245,34 @@ export const PrintersConfig = () => {
 
   }, [socket?.readyState])
 
+  // NOTIFICATIONS
+  useEffect(() => {
+    return notifee.onForegroundEvent(({ type, detail }) => {
+      switch (type) {
+        case EventType.PRESS:
+          if (detail.notification?.id === 'disconnected') {
+            connect()
+          }
+          break;
+        case EventType.DISMISSED:
+          console.log("Descartou na notificação")
+          break;
+      }
+    })
+  }, [])
+
+  useEffect(() => {
+    return notifee.onBackgroundEvent(async ({ type, detail }) => {
+      if (type === EventType.PRESS) {
+        
+        if (detail.notification?.id === 'disconnected') {
+          connect()
+        }
+      }
+    })
+  }, [])
+
+  // SOUND
   useEffect(() => {
     return sound
       ? () => {
@@ -284,7 +325,7 @@ export const PrintersConfig = () => {
           </View>) : (
           <ScrollView className='w-full '>
             {
-              printers?.map(printer => (
+              printers.map(printer => (
                 <View className={`flex-row items-center justify-between p-2 ${printer.error ? 'bg-red-500/30 border border-red-500' : ''}`} key={printer.deviceName}>
                   <View className='flex-row items-center justify-between'>
                     {printer.error && (

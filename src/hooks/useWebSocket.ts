@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { DeviceEventEmitter } from "react-native";
 import BackgroundTimer from 'react-native-background-timer';
 
-export const useWebSocket = (profile: any, onClose?: () => any) => {
+export const useWebSocket = (profile: any, callbacks?: { onClose?: () => any, onConnected?: () => void }) => {
   const [socket, setSocket] = useState<WebSocket>()
   const [pongInterval, setPongInterval] = useState<number>()
   const [status, setStatus] = useState(socket?.readyState ?? 0)
@@ -14,6 +14,7 @@ export const useWebSocket = (profile: any, onClose?: () => any) => {
   const ononpen = (event: any) => {
     if (socket) {
       console.log('%c[ws-connected]:', 'color: #0f0', `on ${event.target.url}`, ` - ${new Date().toTimeString()}`)
+      callbacks?.onConnected && callbacks.onConnected()
       const intervalId = BackgroundTimer.setInterval(() => {
         socket.send(JSON.stringify({ t: 8 }))
       }, 10 * 1000)
@@ -69,7 +70,7 @@ export const useWebSocket = (profile: any, onClose?: () => any) => {
         console.log('%c[ws-disconnected]:', 'color: #f00', `code ${event.code} ${event.reason}`, ` - ${new Date().toTimeString()}`)
         BackgroundTimer.clearInterval(pongInterval!);
         if (event.reason !== 'logoff') {
-          onClose && onClose()
+          callbacks?.onClose && callbacks.onClose()
           connect()
         }
       }

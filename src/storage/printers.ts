@@ -15,7 +15,7 @@ export const setLocalPrinters = async (printers: BluetoothPrinter[]) => {
 export const getLocalPrinters = async (): Promise<BluetoothPrinter[]> => {
   try {
     const storage = await AsyncStorage.getItem(PRINTERS)
-    const printers: BluetoothPrinter[] = storage ? JSON.parse(storage) : null
+    const printers: BluetoothPrinter[] = storage ? JSON.parse(storage) : []
     return printers
   } catch (error) {
     throw error
