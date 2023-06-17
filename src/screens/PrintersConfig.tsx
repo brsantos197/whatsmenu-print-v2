@@ -75,6 +75,7 @@ export const PrintersConfig = () => {
         break;
       }
       case 'ws:disconnected': {
+        await notifee.cancelAllNotifications(['connected'])
         await notifee.displayNotification({
           id: 'disconnected',
           title: 'Desconectado!',
@@ -84,6 +85,7 @@ export const PrintersConfig = () => {
         break;
       }
       case 'ws:connected': {
+        await notifee.cancelAllNotifications(['desconnected'])
         await notifee.displayNotification({
           id: 'connected',
           title: 'Conectado!',
@@ -264,7 +266,7 @@ export const PrintersConfig = () => {
   useEffect(() => {
     return notifee.onBackgroundEvent(async ({ type, detail }) => {
       if (type === EventType.PRESS) {
-        
+
         if (detail.notification?.id === 'disconnected') {
           connect()
         }

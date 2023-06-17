@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, BackHandler } from 'react-native';
+import { View, BackHandler, Alert } from 'react-native';
 
 import { useNavigation } from "@react-navigation/native";
 
@@ -30,6 +30,7 @@ export const Auth = () => {
         navigate('printers', { user })
       }
     } catch (error) {
+      Alert.alert('Autenticação', 'Usuário ou senha incorretos')
       console.error(error);
     }
   }
