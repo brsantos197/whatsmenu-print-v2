@@ -20,6 +20,7 @@ import { DevicesModal } from '../components/DevicesModal';
 import { Page } from '../components/Page';
 import { TextStyled } from '../components/TextStyled';
 import { getLocalPrinters, setLocalPrinters } from '../storage/printers';
+import { Loading } from '../components/Loading';
 
 export const PrintersConfig = () => {
   const { navigate, dispatch } = useNavigation()
@@ -37,6 +38,7 @@ export const PrintersConfig = () => {
     statusText: 'Conectando...' | 'Conectado' | 'Desconectando...' | 'Desconectado',
     color: string,
   }>({ statusText: 'Conectando...', color: colors.yellow[500] })
+  const [loading, setLoading] = useState<{ show: boolean, text?: string }>({ show: false })
 
   const playSound = async () => {
     await Audio.setAudioModeAsync({
@@ -103,6 +105,7 @@ export const PrintersConfig = () => {
   }
 
   const printForAllPrinters = async (data: any) => {
+    setLoading({ text: 'Imprimindo...', show: true })
     const printers = await getLocalPrinters()
     if (printers.length) {
       for (const printer of printers) {
@@ -114,6 +117,7 @@ export const PrintersConfig = () => {
           console.error(error);
         } finally {
           await setLocalPrinters(printers)
+          setLoading({ text: undefined, show: false })
         }
       }
     }
@@ -150,10 +154,18 @@ export const PrintersConfig = () => {
 
   // AUTH
   const handleLogOff = async () => {
-    await removeUser()
-    socket?.close(1000, 'logoff')
-    setProfile(null)
-    navigate('auth')
+    try {
+      setLoading(state => ({ text: 'Saindo...', show: true }))
+      await removeUser()
+      socket?.close(1000, 'logoff')
+      setProfile(null)
+      navigate('auth')
+    } catch (error) {
+      Alert.alert('Ops!', 'Não foi possível deslogar')
+      console.error(error);
+    } finally {
+      setLoading(state => ({ text: undefined, show: false }))
+    }
   }
 
   useEffect(() => {
@@ -367,6 +379,7 @@ export const PrintersConfig = () => {
           setLocalPrinters(selectedPrinters)
         }}
       />
+      <Loading show={loading.show} text={loading.text} size='large' />
     </Page>
   );
 }

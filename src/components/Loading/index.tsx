@@ -1,13 +1,23 @@
-import React from 'react';
-import { View, SafeAreaView } from 'react-native';
+import React, { ComponentProps } from 'react';
+import { View, SafeAreaView, ActivityIndicator } from 'react-native';
 import { TextStyled } from '../TextStyled';
+import colors from 'tailwindcss/colors';
+export interface LoadingProps extends ComponentProps<typeof ActivityIndicator> {
+  show: boolean
+  text?: string
+}
 
-export const Loading = () => {
+export const Loading = ({ text = 'Carregando...', show, ...props }: LoadingProps) => {
+
+  if (!show) {
+    return <></>
+  }
+
   return (
-    <SafeAreaView className='z-10 absolute inset-0 top-6 h-screen w-screen backdrop-opacity-50 items-center justify-items-end bg-zinc-950/40 dark:bg-zinc-100/40'>
+    <SafeAreaView className='z-10 absolute inset-0 h-screen w-screen backdrop-opacity-50 items-center justify-items-end bg-zinc-950/40 dark:bg-zinc-100/40'>
       <View className='my-auto items-center'>
-        {/* <View className='animate-spin rounded-full border-8 border-t-green-500  w-40 h-40 ' ></View> */}
-        <TextStyled className='text-green-500 text-3xl font-bold'>Carregando...</TextStyled>
+        <ActivityIndicator color={colors.green[500]} {...props} />
+        <TextStyled className='text-3xl font-bold'>{ text }</TextStyled>
       </View>
     </SafeAreaView>
   );

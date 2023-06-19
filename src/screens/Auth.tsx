@@ -14,12 +14,13 @@ import { Button } from "../components/Button";
 export const Auth = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [loaded, setLoaded] = useState(false)
+  const [loading, setLoading] = useState<{ show: boolean, text?: string }>({ show: false })
 
   const { navigate, reset } = useNavigation()
 
   const handleAuth = async () => {
     try {
+      setLoading(state => ({ ...state, show: true }))
       const { data } = await api.post('/api/v2/auth/app/print', {
         email,
         password
@@ -32,6 +33,8 @@ export const Auth = () => {
     } catch (error) {
       Alert.alert('Autenticação', 'Usuário ou senha incorretos')
       console.error(error);
+    } finally {
+      setLoading(state => ({ ...state, show: false }))
     }
   }
 
@@ -40,10 +43,8 @@ export const Auth = () => {
       .then(user => {
         if (user) {
           navigate('printers', { user })
-          setLoaded(true)
         }
       })
-      .finally(() => setLoaded(true))
   }, [])
 
   return (
@@ -51,7 +52,7 @@ export const Auth = () => {
       <TextStyled className='mt-40 text-green-500 text-5xl font-bold'>WhatsMenu</TextStyled>
       <View className='w-screen px-10'>
         <Input placeholder='Email' autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={(text) => setEmail(text)} />
-        <Input placeholder='Senha' secureTextEntry value={password} onChangeText={(text) => setPassword(text)} />
+        <Input placeholder='Senha' type='password' secureTextEntry value={password} onChangeText={(text) => setPassword(text)} />
         <Button
           onPress={() => { handleAuth() }}
           className='bg-green-500 p-4 rounded-md items-center justify-items-center'
@@ -59,6 +60,7 @@ export const Auth = () => {
           <TextStyled className='text-lg'>Logar</TextStyled>
         </Button>
       </View>
+      <Loading show={loading.show} text={loading.text} size='large' />
     </Page>
   );
 }
