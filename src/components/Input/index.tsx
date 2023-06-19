@@ -17,7 +17,7 @@ export const Input = ({ className, type = 'normal', secureTextEntry, ...rest }: 
         <TouchableOpacity
           onPress={() => setShowPassword(!showPassword)}
           style={{ position: 'absolute', right: 0 }} className='p-4' >
-          <MaterialCommunityIcons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={22} color={colors.white} />
+          <MaterialCommunityIcons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={22} color={colorScheme === 'dark' ? colors.zinc[50] : colors.zinc[800]} />
         </TouchableOpacity>}
     </View>
   );
