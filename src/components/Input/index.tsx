@@ -12,7 +12,7 @@ export const Input = ({ className, type = 'normal', secureTextEntry, ...rest }: 
   const colorScheme = useColorScheme()
   return (
     <View className='relative flex-row items-center mb-4'>
-      <TextInput secureTextEntry={!showPassword} placeholderTextColor={colorScheme === 'dark' ? colors.zinc[400] : colors.zinc[400]} className={`flex-1 p-4 border border-zinc-500 rounded focus:border-green-500 text-zinc-600 bg-zinc-200 dark:text-zinc-50 dark:bg-zinc-800 ${className ?? ''}`}  {...rest} />
+      <TextInput secureTextEntry={type === 'password' && !showPassword} placeholderTextColor={colorScheme === 'dark' ? colors.zinc[400] : colors.zinc[400]} className={`flex-1 p-4 border border-zinc-500 rounded focus:border-green-500 text-zinc-600 bg-zinc-200 dark:text-zinc-50 dark:bg-zinc-800 ${className ?? ''}`}  {...rest} />
       {type === 'password' &&
         <TouchableOpacity
           onPress={() => setShowPassword(!showPassword)}
