@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { View, BackHandler, Alert } from 'react-native';
 
-import { useNavigation } from "@react-navigation/native";
+import { CommonActions, useNavigation } from "@react-navigation/native";
 
 import { Page } from '../components/Page';
 import { TextStyled } from '../components/TextStyled';
@@ -16,7 +16,7 @@ export const Auth = () => {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState<{ show: boolean, text?: string }>({ show: false })
 
-  const { navigate, reset } = useNavigation()
+  const { navigate, dispatch } = useNavigation()
 
   const handleAuth = async () => {
     try {
@@ -45,6 +45,16 @@ export const Auth = () => {
           navigate('printers', { user })
         }
       })
+      dispatch(state => {
+        const routes = state.routes.filter(r => r.name === 'auth');
+
+        return CommonActions.reset({
+          ...state,
+          routes,
+          index: routes?.length - 1,
+        });
+      })
+      
   }, [])
 
   return (
